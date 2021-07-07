@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">BikeFleetMonitoring</string>
+    <string name="non_hai_un_account_registrati"><u>Non hai un account? Registrati!</u></string>
+    <string name="hai_gi_un_account_login"><u>Hai già un account? Login</u></string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="preloaded_fonts" translatable="false">
+        <item>@font/titillium_web</item>
+        <item>@font/titillium_web_black</item>
+        <item>@font/titillium_web_bold</item>
+        <item>@font/titillium_web_bold_italic</item>
+        <item>@font/titillium_web_extralight</item>
+        <item>@font/titillium_web_extralight_italic</item>
+        <item>@font/titillium_web_italic</item>
+        <item>@font/titillium_web_light</item>
+        <item>@font/titillium_web_light_italic</item>
+        <item>@font/titillium_web_semibold</item>
+        <item>@font/titillium_web_semibold_italic</item>
+    </array>
+</resources>
