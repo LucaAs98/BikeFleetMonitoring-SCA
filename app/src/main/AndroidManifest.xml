@@ -23,8 +23,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MainActivity" />
+        <activity android:name=".MappaRastrelliere" />
         <activity android:name=".Registrazione" />
+        <activity android:name=".ViewBooks" />
+        <activity android:name=".Home" />
 
         <meta-data
             android:name="preloaded_fonts"

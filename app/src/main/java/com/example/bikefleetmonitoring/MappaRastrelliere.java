@@ -1,6 +1,5 @@
 package com.example.bikefleetmonitoring;
 
-import androidx.annotation.IntegerRes;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -9,13 +8,8 @@ import android.Manifest;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.widget.Toast;
 
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.api.GoogleApi;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -28,16 +22,15 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCallback {
     GoogleMap map;
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.rastrelliere);
 
 
         String[] neededPermissions = {
