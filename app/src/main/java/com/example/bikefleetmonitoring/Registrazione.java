@@ -9,7 +9,6 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class Registrazione extends AppCompatActivity {
-
     Button registerButton;
     TextView goToLogin;
 
