@@ -9,8 +9,8 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class Registrazione extends AppCompatActivity {
-    Button registerButton;
-    TextView goToLogin;
+    Button btnRegistrazione;
+    TextView tvVaiALogin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,7 +19,7 @@ public class Registrazione extends AppCompatActivity {
 
         findXmlElements();
 
-        registerButton.setOnClickListener(new View.OnClickListener() {
+        btnRegistrazione.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Registrazione.this, MappaRastrelliere.class);
@@ -27,7 +27,7 @@ public class Registrazione extends AppCompatActivity {
             }
         });
 
-        goToLogin.setOnClickListener(new View.OnClickListener() {
+        tvVaiALogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Registrazione.this, Login.class);
@@ -37,7 +37,7 @@ public class Registrazione extends AppCompatActivity {
     }
 
     private void findXmlElements() {
-        registerButton = findViewById(R.id.registerButton);
-        goToLogin = findViewById(R.id.goToLogin);
+        btnRegistrazione = findViewById(R.id.btnRegistrazione);
+        tvVaiALogin = findViewById(R.id.tvVaiALogin);
     }
 }

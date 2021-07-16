@@ -25,8 +25,10 @@
         </activity>
         <activity android:name=".MappaRastrelliere" />
         <activity android:name=".Registrazione" />
-        <activity android:name=".ViewBikes" />
+        <activity android:name=".BiciDisponibili" />
         <activity android:name=".Home" />
+        <activity android:name=".VediCodicePrenot" />
+        <activity android:name=".ConfermaPrenotazione" />
 
         <meta-data
             android:name="preloaded_fonts"

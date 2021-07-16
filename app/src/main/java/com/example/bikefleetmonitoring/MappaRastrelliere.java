@@ -37,7 +37,7 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.rastrelliere);
+        setContentView(R.layout.mappa_rastrelliere);
 
 
         String[] neededPermissions = {
@@ -47,8 +47,8 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
         };
         ActivityCompat.requestPermissions(this, neededPermissions, 1);
 
-        findXmlElements();
-        initializeToolbar();
+        trovaElementiXML();
+        inizializzaToolbar();
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         assert mapFragment != null;
@@ -69,7 +69,7 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
         // Point the map's listeners at the listeners implemented by the cluster manager.
         map.setOnCameraIdleListener(clusterManager);
 
-        initializeCluster();
+        inizializzaCluster();
 
         new AsyncTaskGetMareker().execute();
     }
@@ -153,11 +153,11 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
         }
     }
 
-    private void findXmlElements() {
+    private void trovaElementiXML() {
         toolbar = findViewById(R.id.toolbar);
     }
 
-    private void initializeToolbar() {
+    private void inizializzaToolbar() {
         toolbar.setTitle("Rastrelliere disponibili");
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
@@ -168,12 +168,12 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
         });
     }
 
-    private void initializeCluster() {
+    private void inizializzaCluster() {
         //Al click dei marker all'interno dei cluster si aprirà la pagina "ViewBikes"
         clusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MyCluster>() {
             @Override
             public boolean onClusterItemClick(MyCluster item) {
-                Intent intent = new Intent(MappaRastrelliere.this, ViewBikes.class);
+                Intent intent = new Intent(MappaRastrelliere.this, BiciDisponibili.class);
                 startActivity(intent);
                 return true;
             }

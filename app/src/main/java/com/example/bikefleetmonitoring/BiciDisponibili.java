@@ -3,6 +3,7 @@ package com.example.bikefleetmonitoring;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -11,36 +12,39 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
-public class ViewBikes extends AppCompatActivity {
+public class BiciDisponibili extends AppCompatActivity {
 
-    RecyclerView recyclerViewBikes;
-    ArrayList<BikeDetails> bikeDetails;
-    AdapterBikeDetails adapterBikeDetails;
+    RecyclerView recyclerViewBici;
+    ArrayList<DettagliBici> dettagliBici;
+    AdapterDettagliBici adapterDettagliBici;
+
     Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.view_bikes);
+        setContentView(R.layout.bici_disponibili);
 
         findXmlElements();
         initializeToolbar();
 
-        bikeDetails = new ArrayList<>();
+        dettagliBici = new ArrayList<>();
 
-        recyclerViewBikes.setLayoutManager(new LinearLayoutManager(this));
-        recyclerViewBikes.setHasFixedSize(true);
+        recyclerViewBici.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewBici.setHasFixedSize(true);
 
         for (int i = 0; i < 20; i++) {
-            bikeDetails.add(new BikeDetails("Bici " + i));
+            dettagliBici.add(new DettagliBici("Bici " + i));
         }
 
-        adapterBikeDetails = new AdapterBikeDetails(bikeDetails);
-        recyclerViewBikes.setAdapter(adapterBikeDetails);
+        adapterDettagliBici = new AdapterDettagliBici(dettagliBici);
+        recyclerViewBici.setAdapter(adapterDettagliBici);
+
+
     }
 
     private void findXmlElements() {
-        recyclerViewBikes = findViewById(R.id.recycleViewBikes);
+        recyclerViewBici = findViewById(R.id.recycleViewBikes);
         toolbar = findViewById(R.id.toolbar);
     }
 
@@ -49,7 +53,7 @@ public class ViewBikes extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(ViewBikes.this, MappaRastrelliere.class);
+                Intent intent = new Intent(BiciDisponibili.this, MappaRastrelliere.class);
                 startActivity(intent);
             }
         });
