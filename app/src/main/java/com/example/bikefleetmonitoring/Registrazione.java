@@ -2,15 +2,26 @@ package com.example.bikefleetmonitoring;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class Registrazione extends AppCompatActivity {
     Button btnRegistrazione;
     TextView tvVaiALogin;
+    EditText etEmail, etPassword;
+    FirebaseAuth fAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,11 +30,40 @@ public class Registrazione extends AppCompatActivity {
 
         findXmlElements();
 
+        fAuth = FirebaseAuth.getInstance();
+
         btnRegistrazione.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Registrazione.this, MappaRastrelliere.class);
-                startActivity(intent);
+                String strEmail = etEmail.getText().toString();
+                String strPassword = etPassword.getText().toString();
+
+                if (TextUtils.isEmpty(strEmail)) {
+                    etEmail.setError("Il campo 'Email' è richiesto.");
+                    return;
+                }
+
+                if (TextUtils.isEmpty(strPassword)) {
+                    etPassword.setError("Il campo 'Password' è richiesto.");
+                    return;
+                }
+
+                if (strPassword.length() < 6) {
+                    etPassword.setError("La password deve essere di almeno sei caratteri.");
+                    return;
+                }
+
+                fAuth.createUserWithEmailAndPassword(strEmail, strPassword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(Registrazione.this, "Utente creato", Toast.LENGTH_SHORT).show();
+                            vaiAHome();
+                        } else {
+                            Toast.makeText(Registrazione.this, "Error! " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
             }
         });
 
@@ -39,5 +79,12 @@ public class Registrazione extends AppCompatActivity {
     private void findXmlElements() {
         btnRegistrazione = findViewById(R.id.btnRegistrazione);
         tvVaiALogin = findViewById(R.id.tvVaiALogin);
+        etEmail = findViewById(R.id.etEmail);
+        etPassword = findViewById(R.id.etPassword);
+    }
+
+    private void vaiAHome() {
+        Intent intent = new Intent(Registrazione.this, Home.class);
+        startActivity(intent);
     }
 }

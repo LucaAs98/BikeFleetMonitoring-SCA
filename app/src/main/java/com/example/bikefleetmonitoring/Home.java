@@ -10,12 +10,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.Toolbar;
 
+import com.google.firebase.auth.FirebaseAuth;
+
 public class Home extends AppCompatActivity {
-    AppCompatButton btnPrenotaBici;
-    AppCompatButton btnVediPrenotazione;
-    TextView tvMessaggioIniziale;
-    TextView tvVediCodPrenot;
+    AppCompatButton btnPrenotaBici, btnVediPrenotazione, btnLogout;
+    TextView tvMessaggioIniziale, tvVediCodPrenot;
     Toolbar toolbar;
+    FirebaseAuth fAuth;
     boolean prenotato = false;
 
     @Override
@@ -24,6 +25,7 @@ public class Home extends AppCompatActivity {
         setContentView(R.layout.home);
 
         trovaElementiXML();
+        fAuth = FirebaseAuth.getInstance();
         inizializzaToolbar();
 
         if (prenotato) {
@@ -31,11 +33,23 @@ public class Home extends AppCompatActivity {
         } else {
             inizializzaNonPrenotato();
         }
+
+        /* Se premiamo il pulsante di Logout andiamo al login e togliamo l'istanza all'utente. */
+        btnLogout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FirebaseAuth.getInstance().signOut();
+                Intent intent = new Intent(Home.this, Login.class);
+                startActivity(intent);
+                finish();
+            }
+        });
     }
 
     private void trovaElementiXML() {
         btnPrenotaBici = findViewById(R.id.btnPrenotaBici);
         btnVediPrenotazione = findViewById(R.id.btnVediPrenotazione);
+        btnLogout = findViewById(R.id.btnLogout);
         tvMessaggioIniziale = findViewById(R.id.tvMessaggioIniziale);
         tvVediCodPrenot = findViewById(R.id.tvVediCodPrenot);
         toolbar = findViewById(R.id.toolbar);
@@ -50,7 +64,7 @@ public class Home extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 prenotato = false;      /* Ora non funziona!!!!!!!!!
-                                         * sarebbe da ricaricare la pagina eliminando la prenotazione della bici! */
+                 * sarebbe da ricaricare la pagina eliminando la prenotazione della bici! */
                 Intent intent = new Intent(Home.this, Home.class);
                 startActivity(intent);
             }
@@ -64,7 +78,12 @@ public class Home extends AppCompatActivity {
             }
         });
         btnPrenotaBici.setVisibility(View.GONE);
-        tvMessaggioIniziale.setText("Ciao $UTENTE !\nStai già noleggiando una bici, vuoi annullare la tua prenotazione?");
+        String utente = "$UTENTE";
+
+        if (fAuth.getCurrentUser() != null) {
+            utente = fAuth.getCurrentUser().getEmail();
+        }
+        tvMessaggioIniziale.setText("Ciao " + utente + "!\nStai già noleggiando una bici, vuoi annullare la tua prenotazione?");
     }
 
     public void inizializzaNonPrenotato() {
@@ -77,6 +96,13 @@ public class Home extends AppCompatActivity {
         });
         tvVediCodPrenot.setVisibility(View.GONE);
         btnVediPrenotazione.setVisibility(View.GONE);
-        tvMessaggioIniziale.setText("Ciao $UTENTE !\nInizia subito a noleggiare una bici vicino a te!");
+
+        String utente = "$UTENTE";
+
+        if (fAuth.getCurrentUser() != null) {
+            utente = fAuth.getCurrentUser().getEmail();
+        }
+
+        tvMessaggioIniziale.setText("Ciao " + utente + "!\nInizia subito a noleggiare una bici vicino a te!");
     }
 }
