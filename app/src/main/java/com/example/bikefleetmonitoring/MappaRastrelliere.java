@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,14 +25,21 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCallback {
     GoogleMap map;
     Toolbar toolbar;
     private ClusterManager<MyCluster> clusterManager;
+    Intent intent;
+    String jsonString;
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
@@ -49,12 +57,13 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
 
         trovaElementiXML();
         inizializzaToolbar();
+        intent = getIntent();
+        jsonString = intent.getStringExtra("rastrelliere_json");
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         assert mapFragment != null;
         mapFragment.getMapAsync(this);
     }
-
 
     // Get a handle to the GoogleMap object and display marker.
     @Override
@@ -74,22 +83,6 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
         new AsyncTaskGetMareker().execute();
     }
 
-    public String getJSONFromAssets() {
-        String json;
-        try {
-            InputStream inputData = getAssets().open("rastrelliere.json");
-            int size = inputData.available();
-            byte[] buffer = new byte[size];
-            inputData.read(buffer);
-            inputData.close();
-            json = new String(buffer, StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        return json;
-    }
-
     private class AsyncTaskGetMareker extends AsyncTask<String, String, JSONArray> {
         @Override
         protected void onPreExecute() {
@@ -98,9 +91,9 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
 
         @Override
         protected JSONArray doInBackground(String... strings) {
-            String rastrelliereJsonString = getJSONFromAssets();
+
             try {
-                return new JSONArray(rastrelliereJsonString);
+                return new JSONArray(jsonString);   //Prendo le rastrelliere passate dalla home
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -110,48 +103,34 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
 
         //Prendiamo i marker dalle rastrelliere
         protected void onPostExecute(JSONArray result) {
-            JSONArray features = null;
+
             if (result != null) {
-                JSONObject jsonObject = null;
-                try {
-                    jsonObject = result.getJSONObject(0);
-                    features = jsonObject.getJSONArray("features");
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                if (features != null) {
-                    for (int i = 0; i < features.length(); i++) {
-                        try {
-                            JSONObject c = features.getJSONObject(i);
-                            JSONObject properties = c.getJSONObject("properties");
-                            JSONObject geometry = c.getJSONObject("geometry");
-                            JSONArray coordinates = geometry.getJSONArray("coordinates");
-                            String name = properties.getString("Nome");
-                            Double lang = (Double) coordinates.get(0);
-                            Double lat = (Double) coordinates.get(1);
+                JSONObject jsonObject;
+                for (int i = 0; i < result.length(); i++) {
+                    try {
+                        jsonObject = result.getJSONObject(i);
+                        drawMarker(new LatLng((Double) jsonObject.get("lat"), (Double) jsonObject.get("long")), jsonObject.get("name").toString());
 
-                            drawMarker(new LatLng(lat, lang), name);
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
                 }
             }
         }
-
-        //Mettiamo il singolo marker nel cluster manager, a visualizzarlo ci pensa lui
-        private void drawMarker(LatLng point, String name) {
-            //Creiamo l'elemento da aggiungere al clusterManager
-            MyCluster offsetItem = new MyCluster(point.latitude, point.longitude, name, name);
-
-            //Aggiungiamo l'elemento al cluster manager
-            clusterManager.addItem(offsetItem);
-
-            //Forza una re-clusterizzazione nella mappa, senza di questo non appaiono la prima volta
-            clusterManager.cluster();
-        }
     }
+
+    //Mettiamo il singolo marker nel cluster manager, a visualizzarlo ci pensa lui
+    private void drawMarker(LatLng point, String name) {
+        //Creiamo l'elemento da aggiungere al clusterManager
+        MyCluster offsetItem = new MyCluster(point.latitude, point.longitude, name, name);
+
+        //Aggiungiamo l'elemento al cluster manager
+        clusterManager.addItem(offsetItem);
+
+        //Forza una re-clusterizzazione nella mappa, senza di questo non appaiono la prima volta
+        clusterManager.cluster();
+    }
+
 
     private void trovaElementiXML() {
         toolbar = findViewById(R.id.toolbar);

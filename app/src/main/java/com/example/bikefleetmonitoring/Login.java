@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -17,12 +18,20 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
+
 public class Login extends AppCompatActivity {
     Button btnLogin;
     TextView tvVaiARegistrazione;
     EditText etEmail, etPassword;
     FirebaseAuth fAuth;
     boolean controlloLogin = false;         //Quando è "false" vogliamo debuggare all'interno senza inserire email e password
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
