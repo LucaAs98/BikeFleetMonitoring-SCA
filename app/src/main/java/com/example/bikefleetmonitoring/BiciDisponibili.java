@@ -26,7 +26,7 @@ public class BiciDisponibili extends AppCompatActivity {
 
     Toolbar toolbar;
 
-    String url = "http://192.168.1.122:3000/rastrelliere";
+    String url = "http://192.168.1.110:3000/rastrelliere";
     AsyncTask<Void, Void, Void> mTask;
     String jsonString;
     Intent intent;

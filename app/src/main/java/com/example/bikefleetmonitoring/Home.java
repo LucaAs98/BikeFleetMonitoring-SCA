@@ -22,13 +22,14 @@ import java.net.URL;
 import java.net.URLConnection;
 
 public class Home extends AppCompatActivity {
+    public static String session = null;
     AppCompatButton btnPrenotaBici, btnVediPrenotazione, btnLogout;
     TextView tvMessaggioIniziale, tvVediCodPrenot;
     Toolbar toolbar;
     FirebaseAuth fAuth;
     boolean prenotato = false;
 
-    String url = "http://192.168.1.122:3000/rastrelliere";
+    String url = "http://192.168.1.110:3000/rastrelliere";
     AsyncTask<Void, Void, Void> mTask;
     String jsonString;
     Intent intent;
