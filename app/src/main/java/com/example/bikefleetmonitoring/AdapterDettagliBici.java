@@ -31,6 +31,8 @@ public class AdapterDettagliBici extends RecyclerView.Adapter<AdapterDettagliBic
     @Override
     public void onBindViewHolder(@NonNull AdapterDettagliBici.ViewHolder holder, int position) {
         holder.tvNomeBici.setText(dettagliBiciList.get(position).getName());
+        holder.idbici = dettagliBiciList.get(position).getId();
+
     }
 
     @Override
@@ -42,6 +44,7 @@ public class AdapterDettagliBici extends RecyclerView.Adapter<AdapterDettagliBic
 
         TextView tvNomeBici;
         Button btnPrenotaBici;
+        int idbici;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -52,6 +55,7 @@ public class AdapterDettagliBici extends RecyclerView.Adapter<AdapterDettagliBic
                 @Override
                 public void onClick(View v) {
                     Intent intent = new Intent(v.getContext(), ConfermaPrenotazione.class);
+                    intent.putExtra("idBici",idbici);
                     v.getContext().startActivity(intent);
                 }
             });

@@ -3,21 +3,33 @@ package com.example.bikefleetmonitoring;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.TimePicker;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.Toolbar;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.StringJoiner;
 
 public class ConfermaPrenotazione extends AppCompatActivity {
     Toolbar toolbar;
@@ -28,12 +40,15 @@ public class ConfermaPrenotazione extends AppCompatActivity {
     EditText btnOraA;
     EditText editTextCliccato;
     AppCompatButton btnConfermaPrenot;
-
+    String url1 = "http://192.168.1.8:3000/prenota";
+    int idBici;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.conferma_prenotazione);
+        Intent intent = getIntent();
+        idBici = intent.getIntExtra("idBici", 0);
 
         trovaElementiXML();
         inizializzaToolbar();
@@ -136,6 +151,9 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                     return;
                 }
 
+                insert();
+
+
             }
         });
     }
@@ -156,5 +174,70 @@ public class ConfermaPrenotazione extends AppCompatActivity {
         SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.US);
 
         editTextCliccato.setText(sdf.format(myCalendar.getTime()));
+    }
+
+    private void insert(){
+        new AsyncTask<Void, Void, Void>() {
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    executeQuery();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void result) {
+                Intent intent = new Intent(ConfermaPrenotazione.this, Home.class);
+                startActivity(intent);
+            }
+        }.execute();
+    }
+
+    private void executeQuery() throws IOException {
+        URL url = new URL(url1);
+        URLConnection con = url.openConnection();
+        HttpURLConnection http = (HttpURLConnection) con;
+        http.setRequestMethod("POST"); // PUT is another valid option
+        http.setDoOutput(true);
+
+        //Generazione del codice generico da fare!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        Map<String, String> arguments = new HashMap<>();
+        String[] nomiVariabili = new String[]{"cod", "utente", "di", "df"};
+        String[] valori = new String[]{"cod"+idBici, Home.session,
+                btnGiornoDa.getText().toString() + " " + btnOraDa.getText().toString(),
+                btnGiornoA.getText().toString() + " " + btnOraA.getText().toString()};
+
+        StringJoiner sj = new StringJoiner("&");
+        for (int i = 0; i < 4; i++){
+            sj.add(URLEncoder.encode(nomiVariabili[i], "UTF-8") + "="
+                    + URLEncoder.encode(valori[i], "UTF-8"));
+        }
+
+        sj.add(URLEncoder.encode("bici", "UTF-8") + "="
+                + URLEncoder.encode(String.valueOf(idBici), "UTF-8"));
+
+
+        byte[] out = sj.toString().getBytes(StandardCharsets.UTF_8);
+        int length = out.length;
+
+        http.setFixedLengthStreamingMode(length);
+        http.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        http.connect();
+
+        //da vedere se queste cose sono da tenere !!!!
+        try(OutputStream os = http.getOutputStream()) {
+            os.write(out);
+        }
+        try {
+            BufferedReader inputStream = null;
+            inputStream = new BufferedReader(new InputStreamReader(http.getInputStream()));
+
+        } finally {
+            http.disconnect();
+        }
     }
 }

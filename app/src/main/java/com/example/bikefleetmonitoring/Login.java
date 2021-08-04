@@ -1,8 +1,5 @@
 package com.example.bikefleetmonitoring;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -13,14 +10,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.auth.FirebaseAuth;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,7 +31,7 @@ public class Login extends AppCompatActivity {
     FirebaseAuth fAuth;
     boolean controlloLogin = false;         //Quando è "false" vogliamo debuggare all'interno senza inserire email e password
 
-    String url = "http://192.168.1.110:3000/users";
+    String url = "http://192.168.1.8:3000/users";
     AsyncTask<Void, Void, Void> mTask;
     HashMap<String, String> hashMapUsers;
     Intent intent;
@@ -71,8 +66,6 @@ public class Login extends AppCompatActivity {
                     etPassword.setError("Il campo 'Password' è richiesto.");
                     return;
                 }
-
-
 
                 login(strEmail, strPassword);
             }

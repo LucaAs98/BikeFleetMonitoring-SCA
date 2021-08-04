@@ -4,8 +4,6 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -30,8 +28,8 @@ public class BiciDisponibili extends AppCompatActivity {
 
     Toolbar toolbar;
 
-    String url = "http://192.168.1.110:3000/rastrelliere";
-    String url2 = "http://192.168.1.110:3000/listabici";
+    String url = "http://192.168.1.8:3000/rastrelliere";
+    String url2 = "http://192.168.1.8:3000/listabici";
     AsyncTask<Void, Void, Void> mTask;
     int idRastrelliera;
     String jsonString;

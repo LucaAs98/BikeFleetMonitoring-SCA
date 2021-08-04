@@ -1,12 +1,9 @@
 package com.example.bikefleetmonitoring;
 
-import static java.lang.Thread.sleep;
-
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,7 +26,7 @@ public class Home extends AppCompatActivity {
     FirebaseAuth fAuth;
     boolean prenotato = false;
 
-    String url = "http://192.168.1.110:3000/rastrelliere";
+    String url = "http://192.168.1.8:3000/rastrelliere";
     AsyncTask<Void, Void, Void> mTask;
     String jsonString;
     Intent intent;
