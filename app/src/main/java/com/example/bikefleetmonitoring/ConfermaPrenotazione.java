@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -26,6 +27,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
     EditText btnGiornoA;
     EditText btnOraA;
     EditText editTextCliccato;
+    AppCompatButton btnConfermaPrenot;
 
 
     @Override
@@ -110,11 +112,30 @@ public class ConfermaPrenotazione extends AppCompatActivity {
         btnGiornoA = findViewById(R.id.btnGiornoA);
         btnOraA = findViewById(R.id.btnOraA);
         toolbar = findViewById(R.id.toolbar);
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+        btnConfermaPrenot = findViewById(R.id.btnConfermaPrenot);
+        btnConfermaPrenot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(ConfermaPrenotazione.this, BiciDisponibili.class);
-                startActivity(intent);
+                if (TextUtils.isEmpty(btnGiornoDa.getText().toString())) {
+                    btnGiornoDa.setError(" campo 'Giorno inizio' è richiesto.");
+                    return;
+                }
+
+                if (TextUtils.isEmpty(btnGiornoA.getText().toString())) {
+                    btnGiornoA.setError("Il campo 'Giorno fine' è richiesto.");
+                    return;
+                }
+
+                if (TextUtils.isEmpty(btnOraDa.getText().toString())) {
+                    btnOraDa.setError("Il campo 'Ora inizio' è richiesto.");
+                    return;
+                }
+
+                if (TextUtils.isEmpty(btnOraA.getText().toString())) {
+                    btnOraA.setError("Il campo 'Ora fine' è richiesto.");
+                    return;
+                }
+
             }
         });
     }
