@@ -109,7 +109,7 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
                 for (int i = 0; i < result.length(); i++) {
                     try {
                         jsonObject = result.getJSONObject(i);
-                        drawMarker(new LatLng((Double) jsonObject.get("lat"), (Double) jsonObject.get("long")), jsonObject.get("name").toString());
+                        drawMarker(new LatLng((Double) jsonObject.get("lat"), (Double) jsonObject.get("long")), jsonObject.get("name").toString(), Integer.parseInt(jsonObject.get("id").toString()));
 
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -120,9 +120,9 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
     }
 
     //Mettiamo il singolo marker nel cluster manager, a visualizzarlo ci pensa lui
-    private void drawMarker(LatLng point, String name) {
+    private void drawMarker(LatLng point, String name,int id) {
         //Creiamo l'elemento da aggiungere al clusterManager
-        MyCluster offsetItem = new MyCluster(point.latitude, point.longitude, name, name);
+        MyCluster offsetItem = new MyCluster(point.latitude, point.longitude, name, name,id);
 
         //Aggiungiamo l'elemento al cluster manager
         clusterManager.addItem(offsetItem);
@@ -153,6 +153,7 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
             @Override
             public boolean onClusterItemClick(MyCluster item) {
                 Intent intent = new Intent(MappaRastrelliere.this, BiciDisponibili.class);
+                intent.putExtra("id",item.getId());
                 startActivity(intent);
                 return true;
             }

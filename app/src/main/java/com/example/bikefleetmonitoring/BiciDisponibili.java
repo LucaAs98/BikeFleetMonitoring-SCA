@@ -5,11 +5,15 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,9 +31,12 @@ public class BiciDisponibili extends AppCompatActivity {
     Toolbar toolbar;
 
     String url = "http://192.168.1.110:3000/rastrelliere";
+    String url2 = "http://192.168.1.110:3000/listabici";
     AsyncTask<Void, Void, Void> mTask;
+    int idRastrelliera;
     String jsonString;
     Intent intent;
+    JSONArray arr = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,17 +46,16 @@ public class BiciDisponibili extends AppCompatActivity {
         findXmlElements();
         initializeToolbar();
 
+        intent = getIntent();
+        idRastrelliera = intent.getIntExtra("id", 0);
+
         dettagliBici = new ArrayList<>();
 
         recyclerViewBici.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewBici.setHasFixedSize(true);
+        getListaBici();
 
-        for (int i = 0; i < 20; i++) {
-            dettagliBici.add(new DettagliBici("Bici " + i));
-        }
 
-        adapterDettagliBici = new AdapterDettagliBici(dettagliBici);
-        recyclerViewBici.setAdapter(adapterDettagliBici);
 
 
     }
@@ -64,6 +70,7 @@ public class BiciDisponibili extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 /* Carica le rastrelliere dal db e va alla mappa delle rastrelliere. */
                 mTask = getRastrelliere();
                 mTask.execute();
@@ -84,9 +91,11 @@ public class BiciDisponibili extends AppCompatActivity {
         inputStream = new BufferedReader(new InputStreamReader(
                 dc.getInputStream()));
 
+
         // read the JSON results into a string
         return inputStream.readLine();
     }
+
 
     public AsyncTask<Void, Void, Void> getRastrelliere() {
         return new AsyncTask<Void, Void, Void>() {
@@ -110,4 +119,69 @@ public class BiciDisponibili extends AppCompatActivity {
             }
         };
     }
+
+
+    private JSONArray executeQweryBici(String url2, int idRastrelliera) throws IOException, JSONException {
+
+        BufferedReader inputStream = null;
+
+        url2 = url2 + "?id=" + idRastrelliera;
+
+        URL jsonUrl = new URL(url2);
+        URLConnection dc = jsonUrl.openConnection();
+
+        dc.setConnectTimeout(5000);
+        dc.setReadTimeout(5000);
+
+        inputStream = new BufferedReader(new InputStreamReader(
+                dc.getInputStream()));
+
+
+        // read the JSON results into a string
+        String jsonS = inputStream.readLine();
+        JSONArray arr = new JSONArray(jsonS);
+
+
+        // read the JSON results into a string
+        return arr;
+    }
+
+
+    private void getListaBici() {
+
+        new AsyncTask<Void, Void, Void>() {
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    arr = executeQweryBici(url2, idRastrelliera);
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void result) {
+                if (arr != null) {
+                    for (int i = 0; i < arr.length(); i++) {
+                        int id = 0;
+                        try {
+                            id = arr.getJSONObject(i).getInt("id");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                        dettagliBici.add(new DettagliBici("Bici " + id, id));
+
+                    }
+                }
+                adapterDettagliBici = new AdapterDettagliBici(dettagliBici);
+                recyclerViewBici.setAdapter(adapterDettagliBici);
+
+            }
+        }.execute();
+
+    }
+
 }
