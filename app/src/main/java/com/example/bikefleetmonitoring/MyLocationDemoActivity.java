@@ -8,7 +8,6 @@ import android.location.Location;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,6 +27,16 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 
 public class MyLocationDemoActivity extends AppCompatActivity {
 
@@ -36,6 +45,9 @@ public class MyLocationDemoActivity extends AppCompatActivity {
 
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest locationRequest;
+    String fileScritturaLettura = "position.txt";
+    int numPosizione = 0;
+
 
     LocationCallback locationCallback = new LocationCallback() {
         @Override
@@ -44,11 +56,81 @@ public class MyLocationDemoActivity extends AppCompatActivity {
                 return;
             }
             for (Location location : locationResult.getLocations()) {
-                Toast.makeText(MyLocationDemoActivity.this, location.toString(), Toast.LENGTH_SHORT).show();
-                /*** Metti qui il codice per mandare i dati dopo la posizione ***/
+                String message;
+                JSONObject json = new JSONObject();
+                try {
+                    json.put("lat", location.getLatitude());
+                    json.put("long", location.getLongitude());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                message = json.toString();
+
+                message = "pos_" + numPosizione + ":" + message;
+                if (numPosizione > 0) {
+                    message = "," + message;
+                }
+                writeFileOnInternalStorage(message);
+                numPosizione += 1;
+                readFileFromInternalStorage();
             }
         }
     };
+
+    public void readFileFromInternalStorage() {
+        try {
+            FileInputStream fileInputStream = openFileInput(fileScritturaLettura);
+            InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
+
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+            StringBuilder stringBuffer = new StringBuilder();
+
+            String lines;
+            while ((lines = bufferedReader.readLine()) != null) {
+                stringBuffer.append(lines).append("\n");
+            }
+            Log.d("Stringa: ", stringBuffer.toString());
+            try {
+                String prova = "{" + stringBuffer.toString() + "}"; //Ricorda di aggiungere le graffe!!!!
+                JSONObject jsonObj = new JSONObject(prova);
+
+
+                Log.d("JSON: ", jsonObj.toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void writeFileOnInternalStorage(String message) {
+        try {
+            FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_APPEND);
+            fileOutputStream.write(message.getBytes());
+            fileOutputStream.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void initializeFileOnInternalStorage() {
+        String init = "";
+        try {
+            FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_PRIVATE);
+            fileOutputStream.write(init.getBytes());
+            fileOutputStream.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +142,8 @@ public class MyLocationDemoActivity extends AppCompatActivity {
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION
         };
         ActivityCompat.requestPermissions(this, neededPermissions, 1);
-
+        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+        initializeFileOnInternalStorage();
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
