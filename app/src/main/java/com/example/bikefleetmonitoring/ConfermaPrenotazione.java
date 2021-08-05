@@ -20,16 +20,20 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringJoiner;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ConfermaPrenotazione extends AppCompatActivity {
     Toolbar toolbar;
@@ -40,13 +44,16 @@ public class ConfermaPrenotazione extends AppCompatActivity {
     EditText btnOraA;
     EditText editTextCliccato;
     AppCompatButton btnConfermaPrenot;
-    String url1 = "http://192.168.1.8:3000/prenota";
+    String url1 = "http://10.0.0.1:3000/prenota";
     int idBici;
+    static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    static SecureRandom rnd = new SecureRandom();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.conferma_prenotazione);
+
         Intent intent = getIntent();
         idBici = intent.getIntExtra("idBici", 0);
 
@@ -191,11 +198,22 @@ public class ConfermaPrenotazione extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(Void result) {
-                Intent intent = new Intent(ConfermaPrenotazione.this, Home.class);
-                startActivity(intent);
+
             }
         }.execute();
+        Intent intent = new Intent(ConfermaPrenotazione.this, Home.class);
+        startActivity(intent);
     }
+
+
+
+    public String randomString(int len){
+        StringBuilder sb = new StringBuilder(len);
+        for(int i = 0; i < len; i++)
+            sb.append(AB.charAt(rnd.nextInt(AB.length())));
+        return sb.toString();
+    }
+
 
     private void executeQuery() throws IOException {
         URL url = new URL(url1);
@@ -205,9 +223,12 @@ public class ConfermaPrenotazione extends AppCompatActivity {
         http.setDoOutput(true);
 
         //Generazione del codice generico da fare!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        String cod = randomString(10); // lunghezza codice alfanumerico
+        System.out.println(cod);
         Map<String, String> arguments = new HashMap<>();
         String[] nomiVariabili = new String[]{"cod", "utente", "di", "df"};
-        String[] valori = new String[]{"cod"+idBici, Home.session,
+        String[] valori = new String[]{cod, Home.session,
                 btnGiornoDa.getText().toString() + " " + btnOraDa.getText().toString(),
                 btnGiornoA.getText().toString() + " " + btnOraA.getText().toString()};
 

@@ -26,7 +26,7 @@ public class Home extends AppCompatActivity {
     FirebaseAuth fAuth;
     boolean prenotato = false;
 
-    String url = "http://192.168.1.8:3000/rastrelliere";
+    String url = "http://10.0.0.1:3000/rastrelliere";
     AsyncTask<Void, Void, Void> mTask;
     String jsonString;
     Intent intent;
