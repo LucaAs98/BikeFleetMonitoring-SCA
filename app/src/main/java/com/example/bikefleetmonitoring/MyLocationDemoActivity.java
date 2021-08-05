@@ -2,9 +2,11 @@ package com.example.bikefleetmonitoring;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
@@ -14,6 +16,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -27,6 +36,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -36,6 +46,16 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.StringJoiner;
 
 
 public class MyLocationDemoActivity extends AppCompatActivity {
@@ -46,9 +66,10 @@ public class MyLocationDemoActivity extends AppCompatActivity {
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest locationRequest;
     String fileScritturaLettura = "position.txt";   // File all'interno della quale andremo a scrivere tutte le posizioni che ci serviranno quando dobbiamo recuperare il tracciato
-                                                    // Ricora! Ora è implementato in modo tale che quando riapre l'app il file positions è vuoto!
+    // Ricora! Ora è implementato in modo tale che quando riapre l'app il file positions è vuoto!
     int numPosizione = 0;                           // Numero della posizione rilevata. Ci serve principalmente per formattare bene la stringa con le posizioni rilevate.
-
+    String url1 = "http://192.168.1.122:3000/prova_posizione";
+    JSONArray jsonArr = new JSONArray();
 
     /* All'interno troviamo "OnLocationResult()" il metodo più importante che viene chiamato ogni
      * volta che il sistema effettua una geolocalizzazione dell'utente. */
@@ -80,13 +101,14 @@ public class MyLocationDemoActivity extends AppCompatActivity {
                 writeFileOnInternalStorage(message);           //Scriviamo sul file la posizione nuova
                 numPosizione += 1;                             //Incrementiamo la posizione da scrivere
                 readFileFromInternalStorage();
+                richiestaPostPosizioneUtente();
             }
         }
     };
 
     /* Metodo per leggere dal file, utilizzato per vedere se i dati vengono scritti correttamente. Non sarà utile
-    *  implementarlo nella versione definitiva. Guarda però al suo interno perchè c'è scritto come formattare la
-    *  stringa prima di trasformarla in JSON corretto. */
+     *  implementarlo nella versione definitiva. Guarda però al suo interno perchè c'è scritto come formattare la
+     *  stringa prima di trasformarla in JSON corretto. */
     public void readFileFromInternalStorage() {
         try {
             FileInputStream fileInputStream = openFileInput(fileScritturaLettura);
@@ -94,29 +116,47 @@ public class MyLocationDemoActivity extends AppCompatActivity {
 
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
             StringBuilder stringBuffer = new StringBuilder();
-
-            String lines;
+            String lines, auxline = "";
             while ((lines = bufferedReader.readLine()) != null) {
                 stringBuffer.append(lines).append("\n");
+                auxline = lines;
             }
+            jsonArr.put(new JSONObject("{" + auxline + "}"));
             Log.d("Stringa: ", stringBuffer.toString());
-            try {
-                String prova = "{" + stringBuffer.toString() + "}"; //Ricorda di aggiungere le graffe!!!!
-                JSONObject jsonObj = new JSONObject(prova);
+            Log.d("JSON: ", jsonArr.toString());
 
-
-                Log.d("JSON: ", jsonObj.toString());
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-        } catch (IOException e) {
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
     }
 
+    /*public String toGeoJSON(JSONArray jsonArray) {
+        JSONObject featureCollection = new JSONObject();
+        try {
+            featureCollection.put("type", "featureCollection");
+            JSONArray featureList = new JSONArray();
+            // iterate through your list
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject explrObject = jsonArray.getJSONObject(i);
+                // {"geometry": {"type": "Point", "coordinates": [-94.149, 36.33]}
+                JSONObject point = new JSONObject();
+                point.put("type", "Point");
+                // construct a JSONArray from a string; can also use an array or list
+                JSONArray coord = new JSONArray("[" + explrObject.get("long") + "," + explrObject.get("lat") + "]");
+                point.put("coordinates", coord);
+                JSONObject feature = new JSONObject();
+                feature.put("geometry", point);
+                featureList.put(feature);
+                featureCollection.put("features", featureList);
+            }
+        } catch (JSONException e) {
+            Log.d("can't save json object: ", e.toString());
+        }
+        return featureCollection.toString();
+    }*/
+
     /* Metodo utile alla scrittura su file situato in memoria interna del telefono. Ogni volta che viene richiamato
-    *  appende al contenuto già presente nel file. */
+     *  appende al contenuto già presente nel file. */
     public void writeFileOnInternalStorage(String message) {
         try {
             FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_APPEND);      //Scrive in modo tale da appendere a ciò che è stato già scritto (MODE_APPEND)
@@ -160,6 +200,52 @@ public class MyLocationDemoActivity extends AppCompatActivity {
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
+    /* Richiesta POST per aggiungere la posizione dell'utente. */
+    private void richiestaPostPosizioneUtente() {
+        //Istanzia la coda di richieste
+        RequestQueue queue = Volley.newRequestQueue(MyLocationDemoActivity.this);
+
+        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url1, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                // Aggiungi codice da fare quando arriva la risposta dalla richiesta
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // Aggiungi codice da fare se la richiesta non è andata a buon fine
+            }
+        }) {
+            //Utile ad inserire i parametri alla richiesta. Messi nel body
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+
+                try {
+                    String lng = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (jsonArr.length() - 1)).get("long").toString();
+                    String lat = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (jsonArr.length() - 1)).get("lat").toString();
+                    //Mettiamo i parametri nel body della richiesta
+                    params.put("lat", lat);
+                    params.put("long", lng);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                return params;
+            }
+
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> params = new HashMap<>();
+                params.put("Content-Type", "application/x-www-form-urlencoded");
+                return params;
+            }
+        };
+
+        // Add the request to the RequestQueue.
+        queue.add(stringRequest);
+    }
 
     /**
      * Mai toccati, sono metodi utili alla geolocalizzazione continua.
