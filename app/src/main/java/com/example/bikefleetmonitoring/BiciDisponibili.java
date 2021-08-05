@@ -28,8 +28,8 @@ public class BiciDisponibili extends AppCompatActivity {
 
     Toolbar toolbar;
 
-    String url = "http://10.0.0.1:3000/rastrelliere";
-    String url2 = "http://10.0.0.1:3000/listabici";
+    String url = "http://192.168.1.110:3000/rastrelliere";
+    String url2 = "http://192.168.1.110:3000/listabici";
     AsyncTask<Void, Void, Void> mTask;
     int idRastrelliera;
     String jsonString;
@@ -174,7 +174,7 @@ public class BiciDisponibili extends AppCompatActivity {
 
                     }
                 }
-                adapterDettagliBici = new AdapterDettagliBici(dettagliBici);
+                adapterDettagliBici = new AdapterDettagliBici(dettagliBici,idRastrelliera);
                 recyclerViewBici.setAdapter(adapterDettagliBici);
 
             }

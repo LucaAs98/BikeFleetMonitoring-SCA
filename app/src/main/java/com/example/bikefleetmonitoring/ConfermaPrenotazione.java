@@ -44,8 +44,9 @@ public class ConfermaPrenotazione extends AppCompatActivity {
     EditText btnOraA;
     EditText editTextCliccato;
     AppCompatButton btnConfermaPrenot;
-    String url1 = "http://10.0.0.1:3000/prenota";
+    String url1 = "http://192.168.1.110:3000/prenota";
     int idBici;
+    int idRastrelliera;
     static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     static SecureRandom rnd = new SecureRandom();
 
@@ -55,6 +56,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
         setContentView(R.layout.conferma_prenotazione);
 
         Intent intent = getIntent();
+        idRastrelliera = intent.getIntExtra("id", 0);
         idBici = intent.getIntExtra("idBici", 0);
 
         trovaElementiXML();
@@ -171,6 +173,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(ConfermaPrenotazione.this, BiciDisponibili.class);
+                intent.putExtra("id",idRastrelliera);
                 startActivity(intent);
             }
         });

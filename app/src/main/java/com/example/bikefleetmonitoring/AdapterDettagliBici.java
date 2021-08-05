@@ -14,9 +14,13 @@ import java.util.ArrayList;
 
 public class AdapterDettagliBici extends RecyclerView.Adapter<AdapterDettagliBici.ViewHolder> {
     private ArrayList<DettagliBici> dettagliBiciList;
+    int idRastrelliera;
 
-    public AdapterDettagliBici(ArrayList<DettagliBici> dettagliBiciList) {
+
+
+    public AdapterDettagliBici(ArrayList<DettagliBici> dettagliBiciList,int idRastrelliera) {
         this.dettagliBiciList = dettagliBiciList;
+        this.idRastrelliera = idRastrelliera;
     }
 
     @NonNull
@@ -56,6 +60,7 @@ public class AdapterDettagliBici extends RecyclerView.Adapter<AdapterDettagliBic
                 public void onClick(View v) {
                     Intent intent = new Intent(v.getContext(), ConfermaPrenotazione.class);
                     intent.putExtra("idBici",idbici);
+                    intent.putExtra("id",idRastrelliera);
                     v.getContext().startActivity(intent);
                 }
             });

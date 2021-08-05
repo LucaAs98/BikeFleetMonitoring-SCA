@@ -12,6 +12,10 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.google.firebase.auth.FirebaseAuth;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -20,15 +24,16 @@ import java.net.URLConnection;
 
 public class Home extends AppCompatActivity {
     public static String session = null;
-    AppCompatButton btnPrenotaBici, btnVediPrenotazione, btnLogout;
+    AppCompatButton btnPrenotaBici, btnAnnullaPrenotazione, btnLogout;
     TextView tvMessaggioIniziale, tvVediCodPrenot;
     Toolbar toolbar;
-    FirebaseAuth fAuth;
-    boolean prenotato = false;
+    boolean prenotato;
 
-    String url = "http://10.0.0.1:3000/rastrelliere";
+    String url = "http://192.168.1.110:3000/rastrelliere";
+    String url2 = "http://192.168.1.110:3000/vis_pren";
     AsyncTask<Void, Void, Void> mTask;
     String jsonString;
+    String codP; //codice alfanumerico della prenotazione
     Intent intent;
 
 
@@ -37,21 +42,19 @@ public class Home extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home);
 
+        isPrenotato();
+
         trovaElementiXML();
-        fAuth = FirebaseAuth.getInstance();
+
         inizializzaToolbar();
 
-        if (prenotato) {
-            inizializzaPrenotato();
-        } else {
-            inizializzaNonPrenotato();
-        }
+
 
         /* Se premiamo il pulsante di Logout andiamo al login e togliamo l'istanza all'utente. */
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                FirebaseAuth.getInstance().signOut();
+                Home.session = "";
                 Intent intent = new Intent(Home.this, Login.class);
                 startActivity(intent);
                 finish();
@@ -62,7 +65,7 @@ public class Home extends AppCompatActivity {
 
     private void trovaElementiXML() {
         btnPrenotaBici = findViewById(R.id.btnPrenotaBici);
-        btnVediPrenotazione = findViewById(R.id.btnVediPrenotazione);
+        btnAnnullaPrenotazione = findViewById(R.id.btnAnnullaPrenotazione);
         btnLogout = findViewById(R.id.btnLogout);
         tvMessaggioIniziale = findViewById(R.id.tvMessaggioIniziale);
         tvVediCodPrenot = findViewById(R.id.tvVediCodPrenot);
@@ -74,7 +77,7 @@ public class Home extends AppCompatActivity {
     }
 
     private void inizializzaPrenotato() {
-        btnVediPrenotazione.setOnClickListener(new View.OnClickListener() {
+        btnAnnullaPrenotazione.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 prenotato = false;      /* Ora non funziona!!!!!!!!!
@@ -88,16 +91,15 @@ public class Home extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Home.this, VediCodicePrenot.class);
+                intent.putExtra("codice",codP);
                 startActivity(intent);
             }
         });
         btnPrenotaBici.setVisibility(View.GONE);
-        String utente = "$UTENTE";
 
-        if (fAuth.getCurrentUser() != null) {
-            utente = fAuth.getCurrentUser().getEmail();
-        }
-        tvMessaggioIniziale.setText("Ciao " + utente + "!\nStai già noleggiando una bici, vuoi annullare la tua prenotazione?");
+
+
+        tvMessaggioIniziale.setText("Ciao " + Home.session + "!\nStai già noleggiando una bici, vuoi annullare la tua prenotazione?");
     }
 
     public void inizializzaNonPrenotato() {
@@ -110,15 +112,11 @@ public class Home extends AppCompatActivity {
             }
         });
         tvVediCodPrenot.setVisibility(View.GONE);
-        btnVediPrenotazione.setVisibility(View.GONE);
+        btnAnnullaPrenotazione.setVisibility(View.GONE);
 
-        String utente = "$UTENTE";
 
-        if (fAuth.getCurrentUser() != null) {
-            utente = fAuth.getCurrentUser().getEmail();
-        }
 
-        tvMessaggioIniziale.setText("Ciao " + utente + "!\nInizia subito a noleggiare una bici vicino a te!");
+        tvMessaggioIniziale.setText("Ciao " + Home.session + "!\nInizia subito a noleggiare una bici vicino a te!");
     }
 
     public static String getJsonFromServer(String url) throws IOException {
@@ -136,6 +134,34 @@ public class Home extends AppCompatActivity {
 
         // read the JSON results into a string
         return inputStream.readLine();
+    }
+
+    public static String getCodPren(String url2,String codU) throws IOException, JSONException {
+
+        BufferedReader inputStream = null;
+        String codP = null;
+        url2 = url2 + "?cod_u=" + codU;
+
+        URL jsonUrl = new URL(url2);
+        URLConnection dc = jsonUrl.openConnection();
+
+        dc.setConnectTimeout(5000);
+        dc.setReadTimeout(5000);
+
+        inputStream = new BufferedReader(new InputStreamReader(
+                dc.getInputStream()));
+
+        String jsonS = inputStream.readLine();
+        JSONArray arr = new JSONArray(jsonS);
+
+
+        if(arr.length() == 1 ) {
+            codP = arr.getJSONObject(0).getString("codice");
+        }
+
+
+        // read the JSON results into a string
+        return codP;
     }
 
     public AsyncTask<Void, Void, Void> getRastrelliere() {
@@ -160,4 +186,38 @@ public class Home extends AppCompatActivity {
             }
         };
     }
+
+
+    public AsyncTask<Void, Void, Void> isPrenotato() {
+        return new AsyncTask<Void, Void, Void>() {
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    codP = getCodPren(url2,Home.session);
+
+
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void result) {
+                super.onPostExecute(result);
+                if(codP != null){
+                    prenotato = true;
+                }else {
+                    prenotato = false;
+                }
+                if (prenotato) {
+                    inizializzaPrenotato();
+                } else {
+                    inizializzaNonPrenotato();
+                }
+            }
+        }.execute();
+    }
+
 }

@@ -31,7 +31,7 @@ public class Login extends AppCompatActivity {
     FirebaseAuth fAuth;
     boolean controlloLogin = false;         //Quando è "false" vogliamo debuggare all'interno senza inserire email e password
 
-    String url = "http://10.0.0.1:3000/users";
+    String url = "http://192.168.1.110:3000/users";
     AsyncTask<Void, Void, Void> mTask;
     HashMap<String, String> hashMapUsers;
     Intent intent;

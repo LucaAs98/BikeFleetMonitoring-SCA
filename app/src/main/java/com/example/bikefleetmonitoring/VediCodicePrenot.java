@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,12 +14,15 @@ import androidx.appcompat.widget.Toolbar;
 public class VediCodicePrenot extends AppCompatActivity {
     Toolbar toolbar;
     AppCompatButton btnCopiaCodice;
-
+    TextView tvCodice;
+    String codP;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.vedi_codice_prenot);
+        Intent intent = getIntent();
+        codP = intent.getStringExtra("codice");
 
         trovaElementiXML();
         inizializzaToolbar();
@@ -34,11 +38,14 @@ public class VediCodicePrenot extends AppCompatActivity {
             }
         });
 
+        tvCodice.setText(codP);
+
     }
 
     private void trovaElementiXML() {
         toolbar = findViewById(R.id.toolbar);
         btnCopiaCodice = findViewById(R.id.btnCopiaCodice);
+        tvCodice = findViewById(R.id.tvCodice);
     }
 
     private void inizializzaToolbar() {
