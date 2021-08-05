@@ -45,10 +45,13 @@ public class MyLocationDemoActivity extends AppCompatActivity {
 
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest locationRequest;
-    String fileScritturaLettura = "position.txt";
-    int numPosizione = 0;
+    String fileScritturaLettura = "position.txt";   // File all'interno della quale andremo a scrivere tutte le posizioni che ci serviranno quando dobbiamo recuperare il tracciato
+                                                    // Ricora! Ora è implementato in modo tale che quando riapre l'app il file positions è vuoto!
+    int numPosizione = 0;                           // Numero della posizione rilevata. Ci serve principalmente per formattare bene la stringa con le posizioni rilevate.
 
 
+    /* All'interno troviamo "OnLocationResult()" il metodo più importante che viene chiamato ogni
+     * volta che il sistema effettua una geolocalizzazione dell'utente. */
     LocationCallback locationCallback = new LocationCallback() {
         @Override
         public void onLocationResult(LocationResult locationResult) {
@@ -56,7 +59,7 @@ public class MyLocationDemoActivity extends AppCompatActivity {
                 return;
             }
             for (Location location : locationResult.getLocations()) {
-                String message;
+                String message;       //Messaggio nella quale verranno inserite latitudine e longitudine, sarà poi formattato per trasformarlo in JSON corretto (Vedi writeFileOnInternalStorage)
                 JSONObject json = new JSONObject();
                 try {
                     json.put("lat", location.getLatitude());
@@ -66,17 +69,24 @@ public class MyLocationDemoActivity extends AppCompatActivity {
                 }
                 message = json.toString();
 
+                /* Iniziamo a formattare "message" per avere un JSON corretto. Il risultato sarà una
+                 * lista di posizioni numerate in base a quando sono state rilevate. */
                 message = "pos_" + numPosizione + ":" + message;
+
+                // Se la posizione non è la prima, mettiamo una virgola prima per separare la nuova posizione dalla precedente.
                 if (numPosizione > 0) {
                     message = "," + message;
                 }
-                writeFileOnInternalStorage(message);
-                numPosizione += 1;
+                writeFileOnInternalStorage(message);           //Scriviamo sul file la posizione nuova
+                numPosizione += 1;                             //Incrementiamo la posizione da scrivere
                 readFileFromInternalStorage();
             }
         }
     };
 
+    /* Metodo per leggere dal file, utilizzato per vedere se i dati vengono scritti correttamente. Non sarà utile
+    *  implementarlo nella versione definitiva. Guarda però al suo interno perchè c'è scritto come formattare la
+    *  stringa prima di trasformarla in JSON corretto. */
     public void readFileFromInternalStorage() {
         try {
             FileInputStream fileInputStream = openFileInput(fileScritturaLettura);
@@ -100,33 +110,30 @@ public class MyLocationDemoActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    /* Metodo utile alla scrittura su file situato in memoria interna del telefono. Ogni volta che viene richiamato
+    *  appende al contenuto già presente nel file. */
     public void writeFileOnInternalStorage(String message) {
         try {
-            FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_APPEND);
-            fileOutputStream.write(message.getBytes());
-            fileOutputStream.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_APPEND);      //Scrive in modo tale da appendere a ciò che è stato già scritto (MODE_APPEND)
+            fileOutputStream.write(message.getBytes());     //Scrittura vera e propria
+            fileOutputStream.close();                       //Chiusura del file
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    /* Metodo chiamato una volta sola all'inizio, per pulire il file se presente. */
     public void initializeFileOnInternalStorage() {
         String init = "";
         try {
-            FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_PRIVATE);
+            FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_PRIVATE);     //La prima volta che apre l'app viene sovrascritto il file (MODE_PRIVATE)
             fileOutputStream.write(init.getBytes());
             fileOutputStream.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -153,6 +160,10 @@ public class MyLocationDemoActivity extends AppCompatActivity {
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
+
+    /**
+     * Mai toccati, sono metodi utili alla geolocalizzazione continua.
+     **/
     @Override
     protected void onStart() {
         super.onStart();
@@ -198,7 +209,6 @@ public class MyLocationDemoActivity extends AppCompatActivity {
         });
     }
 
-
     @SuppressLint("MissingPermission")
     private void startLocationUpdates() {
         fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
@@ -215,9 +225,10 @@ public class MyLocationDemoActivity extends AppCompatActivity {
             public void onSuccess(Location location) {
                 if (location != null) {
                     //We have a location
-                    Log.d(TAG, "onSuccess: " + location.toString());
+                    /* Stampa sul log della posizione, possiamo tenerla commentata. */
+                    /* Log.d(TAG, "onSuccess: " + location.toString());
                     Log.d(TAG, "onSuccess: " + location.getLatitude());
-                    Log.d(TAG, "onSuccess: " + location.getLongitude());
+                    Log.d(TAG, "onSuccess: " + location.getLongitude()); */
                 } else {
                     Log.d(TAG, "onSuccess: Location was null...");
                 }
