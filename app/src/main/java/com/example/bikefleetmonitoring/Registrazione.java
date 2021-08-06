@@ -20,7 +20,7 @@ import com.google.firebase.auth.FirebaseAuth;
 public class Registrazione extends AppCompatActivity {
     Button btnRegistrazione;
     TextView tvVaiALogin;
-    EditText etEmail, etPassword;
+    EditText etUsername, etPassword;
     FirebaseAuth fAuth;
 
     @Override
@@ -35,11 +35,11 @@ public class Registrazione extends AppCompatActivity {
         btnRegistrazione.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String strEmail = etEmail.getText().toString();
+                String strUsername = etUsername.getText().toString();
                 String strPassword = etPassword.getText().toString();
 
-                if (TextUtils.isEmpty(strEmail)) {
-                    etEmail.setError("Il campo 'Email' è richiesto.");
+                if (TextUtils.isEmpty(strUsername)) {
+                    etUsername.setError("Il campo 'Username' è richiesto.");
                     return;
                 }
 
@@ -53,7 +53,7 @@ public class Registrazione extends AppCompatActivity {
                     return;
                 }
 
-                fAuth.createUserWithEmailAndPassword(strEmail, strPassword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                /*fAuth.createUserWithUsernameAndPassword(strUsername, strPassword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
@@ -63,7 +63,7 @@ public class Registrazione extends AppCompatActivity {
                             Toast.makeText(Registrazione.this, "Error! " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     }
-                });
+                });*/
             }
         });
 
@@ -79,7 +79,7 @@ public class Registrazione extends AppCompatActivity {
     private void findXmlElements() {
         btnRegistrazione = findViewById(R.id.btnRegistrazione);
         tvVaiALogin = findViewById(R.id.tvVaiALogin);
-        etEmail = findViewById(R.id.etEmail);
+        etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
     }
 

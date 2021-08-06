@@ -130,31 +130,6 @@ public class MyLocationDemoActivity extends AppCompatActivity {
         }
     }
 
-    /*public String toGeoJSON(JSONArray jsonArray) {
-        JSONObject featureCollection = new JSONObject();
-        try {
-            featureCollection.put("type", "featureCollection");
-            JSONArray featureList = new JSONArray();
-            // iterate through your list
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject explrObject = jsonArray.getJSONObject(i);
-                // {"geometry": {"type": "Point", "coordinates": [-94.149, 36.33]}
-                JSONObject point = new JSONObject();
-                point.put("type", "Point");
-                // construct a JSONArray from a string; can also use an array or list
-                JSONArray coord = new JSONArray("[" + explrObject.get("long") + "," + explrObject.get("lat") + "]");
-                point.put("coordinates", coord);
-                JSONObject feature = new JSONObject();
-                feature.put("geometry", point);
-                featureList.put(feature);
-                featureCollection.put("features", featureList);
-            }
-        } catch (JSONException e) {
-            Log.d("can't save json object: ", e.toString());
-        }
-        return featureCollection.toString();
-    }*/
-
     /* Metodo utile alla scrittura su file situato in memoria interna del telefono. Ogni volta che viene richiamato
      *  appende al contenuto già presente nel file. */
     public void writeFileOnInternalStorage(String message) {
@@ -210,19 +185,19 @@ public class MyLocationDemoActivity extends AppCompatActivity {
             @Override
             public void onResponse(String response) {
                 // Aggiungi codice da fare quando arriva la risposta dalla richiesta
-
+                //------------------------------------------------------------------
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 // Aggiungi codice da fare se la richiesta non è andata a buon fine
+                //------------------------------------------------------------------
             }
         }) {
             //Utile ad inserire i parametri alla richiesta. Messi nel body
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
-
                 try {
                     String lng = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (jsonArr.length() - 1)).get("long").toString();
                     String lat = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (jsonArr.length() - 1)).get("lat").toString();
@@ -243,7 +218,7 @@ public class MyLocationDemoActivity extends AppCompatActivity {
             }
         };
 
-        // Add the request to the RequestQueue.
+        // Aggiungiamo la richiesta alla coda.
         queue.add(stringRequest);
     }
 

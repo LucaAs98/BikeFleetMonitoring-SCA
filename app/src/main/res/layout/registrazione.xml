@@ -39,32 +39,32 @@
         app:layout_constraintTop_toBottomOf="@id/iconaApp" />
 
     <TextView
-        android:id="@+id/tvEmail"
+        android:id="@+id/tvUsername"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="60dp"
-        android:text="Email"
+        android:text="Username"
         android:textColor="@color/primary_text"
         android:textSize="16sp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/titolo" />
 
     <EditText
-        android:id="@+id/etEmail"
+        android:id="@+id/etUsername"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="5dp"
-        android:autofillHints="etEmail"
+        android:autofillHints="etUsername"
         android:background="@drawable/edittextborder"
-        android:inputType="textEmailAddress"
-        android:labelFor="@+id/etEmail"
+        android:inputType="text"
+        android:labelFor="@+id/etUsername"
         android:paddingLeft="20dp"
         android:paddingRight="20dp"
         android:textAlignment="center"
         app:layout_constraintHeight_percent="0.08"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvEmail" />
+        app:layout_constraintTop_toBottomOf="@id/tvUsername" />
 
     <TextView
         android:id="@+id/tvPassword"
@@ -75,7 +75,7 @@
         android:textColor="@color/primary_text"
         android:textSize="16sp"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/etEmail" />
+        app:layout_constraintTop_toBottomOf="@id/etUsername" />
 
     <EditText
         android:id="@+id/etPassword"

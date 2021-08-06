@@ -27,9 +27,9 @@ import java.util.HashMap;
 public class Login extends AppCompatActivity {
     Button btnLogin;
     TextView tvVaiARegistrazione;
-    EditText etEmail, etPassword;
+    EditText etUsername, etPassword;
     FirebaseAuth fAuth;
-    boolean controlloLogin = false;         //Quando è "false" vogliamo debuggare all'interno senza inserire email e password
+    boolean controlloLogin = false;         //Quando è "false" vogliamo debuggare all'interno senza inserire username e password
 
     String url = "http://192.168.1.110:3000/users";
     AsyncTask<Void, Void, Void> mTask;
@@ -54,11 +54,11 @@ public class Login extends AppCompatActivity {
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String strEmail = etEmail.getText().toString();
+                String strUsername = etUsername.getText().toString();
                 String strPassword = etPassword.getText().toString();
 
-                if (TextUtils.isEmpty(strEmail)) {
-                    etEmail.setError("Il campo 'Email' è richiesto.");
+                if (TextUtils.isEmpty(strUsername)) {
+                    etUsername.setError("Il campo 'Username' è richiesto.");
                     return;
                 }
 
@@ -67,7 +67,7 @@ public class Login extends AppCompatActivity {
                     return;
                 }
 
-                login(strEmail, strPassword);
+                login(strUsername, strPassword);
             }
         });
 
@@ -84,7 +84,7 @@ public class Login extends AppCompatActivity {
     private void findXmlElements() {
         btnLogin = findViewById(R.id.btnLogin);
         tvVaiARegistrazione = findViewById(R.id.tvVaiARegistrazione);
-        etEmail = findViewById(R.id.etEmail);
+        etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
     }
 
@@ -146,7 +146,7 @@ public class Login extends AppCompatActivity {
                     vaiAHome();
 
                 } else {
-                    etEmail.setError("Username/password errate");
+                    etUsername.setError("Username/password errate");
                     etPassword.setError("Username/password errate");
 
                 }
