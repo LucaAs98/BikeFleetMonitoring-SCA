@@ -15,8 +15,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.Toolbar;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.RetryPolicy;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
@@ -51,7 +54,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
     EditText btnOraA;
     EditText editTextCliccato;
     AppCompatButton btnConfermaPrenot;
-    String url1 = "http://192.168.1.122:3000/prenota";
+    String url1 = "http://" + Login.ip + ":3000/prenota";
     int idBici;
     int idRastrelliera;
     static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -158,8 +161,13 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                 }
 
                 richiestaPostPrenotazione();
-                Intent intent = new Intent(ConfermaPrenotazione.this, MyLocationDemoActivity.class);
+                Intent intent = new Intent(ConfermaPrenotazione.this, GeolocalizationService.class);
                 intent.putExtra("id", idBici);
+                startService(intent);
+
+
+                intent = new Intent(ConfermaPrenotazione.this, Home.class);
+
                 startActivity(intent);
             }
         });
@@ -213,7 +221,6 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                 },
                 error -> {
                     // Aggiungi codice da fare se la richiesta non è andata a buon fine
-                    //------------------------------------------------------------------
                 }) {
             //Utile ad inserire i parametri alla richiesta. Messi nel body
             @Override
@@ -236,6 +243,12 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                 return params;
             }
         };
+
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
+                0,
+                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
         // Aggiungiamo la richiesta alla coda.
         queue.add(stringRequest);
     }

@@ -32,11 +32,16 @@ import java.util.Locale;
 import java.util.Map;
 
 public class Login extends AppCompatActivity {
+    public static String ip;
+    String ipLuca = "192.168.1.122";
+    String ipMauro = "192.168.1.110";
+    String ipAndrea = "192.168.1.8";
+
     Button btnLogin;
     TextView tvVaiARegistrazione;
     EditText etUsername, etPassword;
 
-    String url = "http://192.168.1.122:3000/users";
+    String url;
     HashMap<String, String> hashMapUsers = new HashMap<>();
 
     @Override
@@ -45,7 +50,8 @@ public class Login extends AppCompatActivity {
         setContentView(R.layout.login);
 
         findXmlElements();
-
+        ip = ipLuca;
+        url = "http://" + ip + ":3000/users";
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override

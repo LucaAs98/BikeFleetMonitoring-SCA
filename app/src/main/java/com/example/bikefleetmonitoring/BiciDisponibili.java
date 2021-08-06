@@ -36,7 +36,7 @@ public class BiciDisponibili extends AppCompatActivity {
 
     Toolbar toolbar;
 
-    String url2 = "http://192.168.1.122:3000/listabici";
+    String url2 = "http://" + Login.ip + ":3000/listabici";
     int idRastrelliera;
     Intent intent;
 

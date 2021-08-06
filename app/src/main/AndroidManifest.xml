@@ -34,7 +34,6 @@
         <activity android:name=".Home" />
         <activity android:name=".VediCodicePrenot" />
         <activity android:name=".ConfermaPrenotazione" />
-        <activity android:name=".MyLocationDemoActivity" />
 
         <meta-data
             android:name="preloaded_fonts"
@@ -43,6 +42,8 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
+
+        <service android:name=".GeolocalizationService" />
     </application>
 
 </manifest>

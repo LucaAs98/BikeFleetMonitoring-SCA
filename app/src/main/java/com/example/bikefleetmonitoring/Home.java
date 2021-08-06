@@ -36,8 +36,8 @@ public class Home extends AppCompatActivity {
     Toolbar toolbar;
     boolean prenotato;
 
-    String url = "http://192.168.1.122:3000/delPren";
-    String url2 = "http://192.168.1.122:3000/vis_pren";
+    String url = "http://" + Login.ip + ":3000/delPren";
+    String url2 = "http://" + Login.ip + ":3000/vis_pren";
     String codP = null; //codice alfanumerico della prenotazione
 
 
@@ -84,7 +84,9 @@ public class Home extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 richiestaGetAnnullaPren();
-                Intent intent = new Intent(Home.this, Home.class);
+                Intent intent = new Intent(Home.this, GeolocalizationService.class);
+                stopService(intent);
+                intent = new Intent(Home.this, Home.class);
                 startActivity(intent);
             }
         });

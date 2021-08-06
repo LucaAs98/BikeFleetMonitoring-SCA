@@ -1,5 +1,7 @@
 package com.example.bikefleetmonitoring;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -30,6 +32,10 @@ public class VediCodicePrenot extends AppCompatActivity {
         btnCopiaCodice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("Codice noleggio", codP);
+                clipboard.setPrimaryClip(clip);
+
                 Context context = getApplicationContext();
                 CharSequence testoToast = "Codice copiato negli appunti!";
                 int durataToast = Toast.LENGTH_SHORT;
@@ -37,9 +43,7 @@ public class VediCodicePrenot extends AppCompatActivity {
                 toast.show();
             }
         });
-
         tvCodice.setText(codP);
-
     }
 
     private void trovaElementiXML() {

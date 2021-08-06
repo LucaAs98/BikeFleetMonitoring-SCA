@@ -31,8 +31,8 @@ public class Registrazione extends AppCompatActivity {
     Button btnRegistrazione;
     TextView tvVaiALogin;
     EditText etUsername, etPassword;
-    String url = "http://192.168.1.122:3000/users";
-    String url1 = "http://192.168.1.122:3000/registrazione";
+    String url = "http://" + Login.ip + ":3000/users";
+    String url1 = "http://" + Login.ip + "/registrazione";
     HashMap<String, String> hashMapUsers = new HashMap<>();
 
 

@@ -43,7 +43,7 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
     Toolbar toolbar;
     private ClusterManager<MyCluster> clusterManager;
     String rastrelliereJson;
-    String url = "http://192.168.1.122:3000/rastrelliere";
+    String url = "http://" + Login.ip + ":3000/rastrelliere";
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
