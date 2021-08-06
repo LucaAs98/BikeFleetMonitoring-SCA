@@ -13,6 +13,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -38,8 +42,8 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
     GoogleMap map;
     Toolbar toolbar;
     private ClusterManager<MyCluster> clusterManager;
-    Intent intent;
-    String jsonString;
+    String rastrelliereJson;
+    String url = "http://192.168.1.122:3000/rastrelliere";
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
@@ -57,13 +61,50 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
 
         trovaElementiXML();
         inizializzaToolbar();
-        intent = getIntent();
-        jsonString = intent.getStringExtra("rastrelliere_json");
 
+        richiestaGetRastrelliere();
+    }
+
+    private void trovaElementiXML() {
+        toolbar = findViewById(R.id.toolbar);
+    }
+
+    private void inizializzaToolbar() {
+        toolbar.setTitle("Rastrelliere disponibili");
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MappaRastrelliere.this, Home.class);
+                startActivity(intent);
+            }
+        });
+    }
+
+    private void richiestaGetRastrelliere() {
+        //Istanzia la coda di richieste
+        RequestQueue queue = Volley.newRequestQueue(MappaRastrelliere.this);
+
+        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    // Aggiungi codice da fare quando arriva la risposta dalla richiesta
+                    rastrelliereJson = response;
+                    visualizzaMappa();
+                },
+                error -> {
+                    // Aggiungi codice da fare se la richiesta non è andata a buon fine
+                    //------------------------------------------------------------------
+                });
+        // Aggiungiamo la richiesta alla coda.
+        queue.add(stringRequest);
+    }
+
+    private void visualizzaMappa() {
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         assert mapFragment != null;
         mapFragment.getMapAsync(this);
     }
+
 
     // Get a handle to the GoogleMap object and display marker.
     @Override
@@ -83,6 +124,31 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
         new AsyncTaskGetMareker().execute();
     }
 
+    private void inizializzaCluster() {
+        //Al click dei marker all'interno dei cluster si aprirà la pagina "ViewBikes"
+        clusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MyCluster>() {
+            @Override
+            public boolean onClusterItemClick(MyCluster item) {
+                Intent intent = new Intent(MappaRastrelliere.this, BiciDisponibili.class);
+                intent.putExtra("id", item.getId());
+                startActivity(intent);
+                return true;
+            }
+        });
+
+        //Quando clicchiamo sul cluster zoomera e si amplierà
+        clusterManager.setOnClusterClickListener(new ClusterManager.OnClusterClickListener<MyCluster>() {
+            @Override
+            public boolean onClusterClick(Cluster<MyCluster> cluster) {
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                        cluster.getPosition(), (float) Math.floor(map
+                                .getCameraPosition().zoom + 1)), 300,
+                        null);
+                return true;
+            }
+        });
+    }
+
     private class AsyncTaskGetMareker extends AsyncTask<String, String, JSONArray> {
         @Override
         protected void onPreExecute() {
@@ -93,7 +159,7 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
         protected JSONArray doInBackground(String... strings) {
 
             try {
-                return new JSONArray(jsonString);   //Prendo le rastrelliere passate dalla home
+                return new JSONArray(rastrelliereJson);   //Prendo le rastrelliere passate dalla home
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -120,55 +186,14 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
     }
 
     //Mettiamo il singolo marker nel cluster manager, a visualizzarlo ci pensa lui
-    private void drawMarker(LatLng point, String name,int id) {
+    private void drawMarker(LatLng point, String name, int id) {
         //Creiamo l'elemento da aggiungere al clusterManager
-        MyCluster offsetItem = new MyCluster(point.latitude, point.longitude, name, name,id);
+        MyCluster offsetItem = new MyCluster(point.latitude, point.longitude, name, name, id);
 
         //Aggiungiamo l'elemento al cluster manager
         clusterManager.addItem(offsetItem);
 
         //Forza una re-clusterizzazione nella mappa, senza di questo non appaiono la prima volta
         clusterManager.cluster();
-    }
-
-
-    private void trovaElementiXML() {
-        toolbar = findViewById(R.id.toolbar);
-    }
-
-    private void inizializzaToolbar() {
-        toolbar.setTitle("Rastrelliere disponibili");
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MappaRastrelliere.this, Home.class);
-                startActivity(intent);
-            }
-        });
-    }
-
-    private void inizializzaCluster() {
-        //Al click dei marker all'interno dei cluster si aprirà la pagina "ViewBikes"
-        clusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MyCluster>() {
-            @Override
-            public boolean onClusterItemClick(MyCluster item) {
-                Intent intent = new Intent(MappaRastrelliere.this, BiciDisponibili.class);
-                intent.putExtra("id",item.getId());
-                startActivity(intent);
-                return true;
-            }
-        });
-
-        //Quando clicchiamo sul cluster zoomera e si amplierà
-        clusterManager.setOnClusterClickListener(new ClusterManager.OnClusterClickListener<MyCluster>() {
-            @Override
-            public boolean onClusterClick(Cluster<MyCluster> cluster) {
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(
-                        cluster.getPosition(), (float) Math.floor(map
-                                .getCameraPosition().zoom + 1)), 300,
-                        null);
-                return true;
-            }
-        });
     }
 }

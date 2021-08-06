@@ -3,6 +3,7 @@ package com.example.bikefleetmonitoring;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -10,6 +11,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.Toolbar;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.firebase.auth.FirebaseAuth;
 
 import org.json.JSONArray;
@@ -21,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Home extends AppCompatActivity {
     public static String session = null;
@@ -29,12 +36,9 @@ public class Home extends AppCompatActivity {
     Toolbar toolbar;
     boolean prenotato;
 
-    String url = "http://192.168.1.110:3000/rastrelliere";
-    String url2 = "http://192.168.1.110:3000/vis_pren";
-    AsyncTask<Void, Void, Void> mTask;
-    String jsonString;
-    String codP; //codice alfanumerico della prenotazione
-    Intent intent;
+    String url = "http://192.168.1.122:3000/delPren";
+    String url2 = "http://192.168.1.122:3000/vis_pren";
+    String codP = null; //codice alfanumerico della prenotazione
 
 
     @Override
@@ -42,13 +46,9 @@ public class Home extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home);
 
-        isPrenotato();
-
         trovaElementiXML();
 
         inizializzaToolbar();
-
-
 
         /* Se premiamo il pulsante di Logout andiamo al login e togliamo l'istanza all'utente. */
         btnLogout.setOnClickListener(new View.OnClickListener() {
@@ -60,8 +60,11 @@ public class Home extends AppCompatActivity {
                 finish();
             }
         });
-    }
 
+        url2 = url2 + "?cod_u=" + Home.session;
+        richiestaGetCodicePren();
+
+    }
 
     private void trovaElementiXML() {
         btnPrenotaBici = findViewById(R.id.btnPrenotaBici);
@@ -80,8 +83,7 @@ public class Home extends AppCompatActivity {
         btnAnnullaPrenotazione.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                prenotato = false;      /* Ora non funziona!!!!!!!!!
-                 * sarebbe da ricaricare la pagina eliminando la prenotazione della bici! */
+                richiestaGetAnnullaPren();
                 Intent intent = new Intent(Home.this, Home.class);
                 startActivity(intent);
             }
@@ -91,12 +93,11 @@ public class Home extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Home.this, VediCodicePrenot.class);
-                intent.putExtra("codice",codP);
+                intent.putExtra("codice", codP);
                 startActivity(intent);
             }
         });
         btnPrenotaBici.setVisibility(View.GONE);
-
 
 
         tvMessaggioIniziale.setText("Ciao " + Home.session + "!\nStai già noleggiando una bici, vuoi annullare la tua prenotazione?");
@@ -106,118 +107,73 @@ public class Home extends AppCompatActivity {
         btnPrenotaBici.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /* Carica le rastrelliere dal db e va alla mappa delle rastrelliere. */
-                mTask = getRastrelliere();
-                mTask.execute();
+                Intent intent = new Intent(Home.this, MappaRastrelliere.class);
+                startActivity(intent);
             }
         });
         tvVediCodPrenot.setVisibility(View.GONE);
         btnAnnullaPrenotazione.setVisibility(View.GONE);
 
 
-
         tvMessaggioIniziale.setText("Ciao " + Home.session + "!\nInizia subito a noleggiare una bici vicino a te!");
     }
 
-    public static String getJsonFromServer(String url) throws IOException {
+    /* Richiesta GET per ................ */
+    private void richiestaGetCodicePren() {
 
-        BufferedReader inputStream = null;
+        //Istanzia la coda di richieste
+        RequestQueue queue = Volley.newRequestQueue(Home.this);
 
-        URL jsonUrl = new URL(url);
-        URLConnection dc = jsonUrl.openConnection();
-
-        dc.setConnectTimeout(5000);
-        dc.setReadTimeout(5000);
-
-        inputStream = new BufferedReader(new InputStreamReader(
-                dc.getInputStream()));
-
-        // read the JSON results into a string
-        return inputStream.readLine();
+        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url2,
+                response -> {
+                    // Aggiungi codice da fare quando arriva la risposta dalla richiesta
+                    JSONArray arrCodici = null;
+                    try {
+                        arrCodici = new JSONArray(response);
+                        if (arrCodici.length() == 1) {
+                            codP = arrCodici.getJSONObject(0).getString("codice");
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    setPrenotato();
+                },
+                error -> {
+                    // Aggiungi codice da fare se la richiesta non è andata a buon fine
+                    //------------------------------------------------------------------
+                });
+        // Aggiungiamo la richiesta alla coda.
+        queue.add(stringRequest);
     }
 
-    public static String getCodPren(String url2,String codU) throws IOException, JSONException {
-
-        BufferedReader inputStream = null;
-        String codP = null;
-        url2 = url2 + "?cod_u=" + codU;
-
-        URL jsonUrl = new URL(url2);
-        URLConnection dc = jsonUrl.openConnection();
-
-        dc.setConnectTimeout(5000);
-        dc.setReadTimeout(5000);
-
-        inputStream = new BufferedReader(new InputStreamReader(
-                dc.getInputStream()));
-
-        String jsonS = inputStream.readLine();
-        JSONArray arr = new JSONArray(jsonS);
-
-
-        if(arr.length() == 1 ) {
-            codP = arr.getJSONObject(0).getString("codice");
+    private void setPrenotato() {
+        prenotato = codP != null;
+        if (prenotato) {
+            inizializzaPrenotato();
+        } else {
+            inizializzaNonPrenotato();
         }
-
-
-        // read the JSON results into a string
-        return codP;
     }
 
-    public AsyncTask<Void, Void, Void> getRastrelliere() {
-        return new AsyncTask<Void, Void, Void>() {
+    private void richiestaGetAnnullaPren() {
+        url = url + "?codPren=" + codP;
 
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    jsonString = getJsonFromServer(url);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
+        //Istanzia la coda di richieste
+        RequestQueue queue = Volley.newRequestQueue(Home.this);
 
-            @Override
-            protected void onPostExecute(Void result) {
-                super.onPostExecute(result);
-                intent = new Intent(Home.this, MappaRastrelliere.class);
-                intent.putExtra("rastrelliere_json", jsonString);
-                startActivity(intent);
-            }
-        };
+        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    // Aggiungi codice da fare quando arriva la risposta dalla richiesta
+
+                },
+                error -> {
+                    // Aggiungi codice da fare se la richiesta non è andata a buon fine
+                    //------------------------------------------------------------------
+                });
+        // Aggiungiamo la richiesta alla coda.
+        queue.add(stringRequest);
+
     }
-
-
-    public AsyncTask<Void, Void, Void> isPrenotato() {
-        return new AsyncTask<Void, Void, Void>() {
-
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    codP = getCodPren(url2,Home.session);
-
-
-                } catch (IOException | JSONException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void result) {
-                super.onPostExecute(result);
-                if(codP != null){
-                    prenotato = true;
-                }else {
-                    prenotato = false;
-                }
-                if (prenotato) {
-                    inizializzaPrenotato();
-                } else {
-                    inizializzaNonPrenotato();
-                }
-            }
-        }.execute();
-    }
-
 }

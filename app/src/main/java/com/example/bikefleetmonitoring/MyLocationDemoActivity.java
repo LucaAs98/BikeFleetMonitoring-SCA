@@ -68,8 +68,10 @@ public class MyLocationDemoActivity extends AppCompatActivity {
     String fileScritturaLettura = "position.txt";   // File all'interno della quale andremo a scrivere tutte le posizioni che ci serviranno quando dobbiamo recuperare il tracciato
     // Ricora! Ora è implementato in modo tale che quando riapre l'app il file positions è vuoto!
     int numPosizione = 0;                           // Numero della posizione rilevata. Ci serve principalmente per formattare bene la stringa con le posizioni rilevate.
-    String url1 = "http://192.168.1.122:3000/prova_posizione";
+    String url1 = "http://192.168.1.122:3000/addPosizione";
     JSONArray jsonArr = new JSONArray();
+    Intent intent;
+    int idBici;
 
     /* All'interno troviamo "OnLocationResult()" il metodo più importante che viene chiamato ogni
      * volta che il sistema effettua una geolocalizzazione dell'utente. */
@@ -167,6 +169,8 @@ public class MyLocationDemoActivity extends AppCompatActivity {
         requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         initializeFileOnInternalStorage();
 
+        intent = getIntent();
+        idBici = intent.getIntExtra("id", -1);
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         locationRequest = LocationRequest.create();
@@ -181,19 +185,15 @@ public class MyLocationDemoActivity extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(MyLocationDemoActivity.this);
 
         // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, url1, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                // Aggiungi codice da fare quando arriva la risposta dalla richiesta
-                //------------------------------------------------------------------
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // Aggiungi codice da fare se la richiesta non è andata a buon fine
-                //------------------------------------------------------------------
-            }
-        }) {
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url1,
+                response -> {
+                    // Aggiungi codice da fare quando arriva la risposta dalla richiesta
+                    //------------------------------------------------------------------
+                },
+                error -> {
+                    // Aggiungi codice da fare se la richiesta non è andata a buon fine
+                    //------------------------------------------------------------------
+                }) {
             //Utile ad inserire i parametri alla richiesta. Messi nel body
             @Override
             protected Map<String, String> getParams() {
@@ -204,6 +204,7 @@ public class MyLocationDemoActivity extends AppCompatActivity {
                     //Mettiamo i parametri nel body della richiesta
                     params.put("lat", lat);
                     params.put("long", lng);
+                    params.put("id", String.valueOf(idBici));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -217,7 +218,6 @@ public class MyLocationDemoActivity extends AppCompatActivity {
                 return params;
             }
         };
-
         // Aggiungiamo la richiesta alla coda.
         queue.add(stringRequest);
     }

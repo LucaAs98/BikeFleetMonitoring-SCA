@@ -15,6 +15,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.Toolbar;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -44,10 +51,11 @@ public class ConfermaPrenotazione extends AppCompatActivity {
     EditText btnOraA;
     EditText editTextCliccato;
     AppCompatButton btnConfermaPrenot;
-    String url1 = "http://192.168.1.110:3000/prenota";
+    String url1 = "http://192.168.1.122:3000/prenota";
     int idBici;
     int idRastrelliera;
     static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    int lunghCodiceGenerato = 10;
     static SecureRandom rnd = new SecureRandom();
 
     @Override
@@ -64,16 +72,13 @@ public class ConfermaPrenotazione extends AppCompatActivity {
 
 
         DatePickerDialog.OnDateSetListener date = new DatePickerDialog.OnDateSetListener() {
-
             @Override
-            public void onDateSet(DatePicker view, int year, int monthOfYear,
-                                  int dayOfMonth) {
+            public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
                 myCalendar.set(Calendar.YEAR, year);
                 myCalendar.set(Calendar.MONTH, monthOfYear);
                 myCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
                 updateLabel();
             }
-
         };
 
         btnGiornoDa.setOnClickListener(new View.OnClickListener() {
@@ -128,15 +133,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                 mTimePicker.show();
             }
         });
-    }
 
-    private void trovaElementiXML() {
-        btnGiornoDa = findViewById(R.id.btnGiornoDa);
-        btnOraDa = findViewById(R.id.btnOraDa);
-        btnGiornoA = findViewById(R.id.btnGiornoA);
-        btnOraA = findViewById(R.id.btnOraA);
-        toolbar = findViewById(R.id.toolbar);
-        btnConfermaPrenot = findViewById(R.id.btnConfermaPrenot);
         btnConfermaPrenot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -160,11 +157,21 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                     return;
                 }
 
-                insert();
-
-
+                richiestaPostPrenotazione();
+                Intent intent = new Intent(ConfermaPrenotazione.this, MyLocationDemoActivity.class);
+                intent.putExtra("id", idBici);
+                startActivity(intent);
             }
         });
+    }
+
+    private void trovaElementiXML() {
+        btnGiornoDa = findViewById(R.id.btnGiornoDa);
+        btnOraDa = findViewById(R.id.btnOraDa);
+        btnGiornoA = findViewById(R.id.btnGiornoA);
+        btnOraA = findViewById(R.id.btnOraA);
+        toolbar = findViewById(R.id.toolbar);
+        btnConfermaPrenot = findViewById(R.id.btnConfermaPrenot);
     }
 
     private void inizializzaToolbar() {
@@ -173,7 +180,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(ConfermaPrenotazione.this, BiciDisponibili.class);
-                intent.putExtra("id",idRastrelliera);
+                intent.putExtra("id", idRastrelliera);
                 startActivity(intent);
             }
         });
@@ -186,82 +193,50 @@ public class ConfermaPrenotazione extends AppCompatActivity {
         editTextCliccato.setText(sdf.format(myCalendar.getTime()));
     }
 
-    private void insert(){
-        new AsyncTask<Void, Void, Void>() {
-
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    executeQuery();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void result) {
-
-            }
-        }.execute();
-        Intent intent = new Intent(ConfermaPrenotazione.this, Home.class);
-        startActivity(intent);
-    }
-
-
-
-    public String randomString(int len){
+    public String randomString(int len) {
         StringBuilder sb = new StringBuilder(len);
-        for(int i = 0; i < len; i++)
+        for (int i = 0; i < len; i++)
             sb.append(AB.charAt(rnd.nextInt(AB.length())));
         return sb.toString();
     }
 
+    /* Richiesta POST............. */
+    private void richiestaPostPrenotazione() {
+        //Istanzia la coda di richieste
+        RequestQueue queue = Volley.newRequestQueue(ConfermaPrenotazione.this);
 
-    private void executeQuery() throws IOException {
-        URL url = new URL(url1);
-        URLConnection con = url.openConnection();
-        HttpURLConnection http = (HttpURLConnection) con;
-        http.setRequestMethod("POST"); // PUT is another valid option
-        http.setDoOutput(true);
+        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url1,
+                response -> {
+                    // Aggiungi codice da fare quando arriva la risposta dalla richiesta
 
-        //Generazione del codice generico da fare!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                },
+                error -> {
+                    // Aggiungi codice da fare se la richiesta non è andata a buon fine
+                    //------------------------------------------------------------------
+                }) {
+            //Utile ad inserire i parametri alla richiesta. Messi nel body
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                String cod = randomString(lunghCodiceGenerato);
+                params.put("cod", cod);
+                params.put("utente", Home.session);
+                params.put("di", btnGiornoDa.getText().toString() + " " + btnOraDa.getText().toString());
+                params.put("df", btnGiornoA.getText().toString() + " " + btnOraA.getText().toString());
+                params.put("bici", String.valueOf(idBici));
 
-        String cod = randomString(10); // lunghezza codice alfanumerico
-        System.out.println(cod);
-        Map<String, String> arguments = new HashMap<>();
-        String[] nomiVariabili = new String[]{"cod", "utente", "di", "df"};
-        String[] valori = new String[]{cod, Home.session,
-                btnGiornoDa.getText().toString() + " " + btnOraDa.getText().toString(),
-                btnGiornoA.getText().toString() + " " + btnOraA.getText().toString()};
+                return params;
+            }
 
-        StringJoiner sj = new StringJoiner("&");
-        for (int i = 0; i < 4; i++){
-            sj.add(URLEncoder.encode(nomiVariabili[i], "UTF-8") + "="
-                    + URLEncoder.encode(valori[i], "UTF-8"));
-        }
-
-        sj.add(URLEncoder.encode("bici", "UTF-8") + "="
-                + URLEncoder.encode(String.valueOf(idBici), "UTF-8"));
-
-
-        byte[] out = sj.toString().getBytes(StandardCharsets.UTF_8);
-        int length = out.length;
-
-        http.setFixedLengthStreamingMode(length);
-        http.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-        http.connect();
-
-        //da vedere se queste cose sono da tenere !!!!
-        try(OutputStream os = http.getOutputStream()) {
-            os.write(out);
-        }
-        try {
-            BufferedReader inputStream = null;
-            inputStream = new BufferedReader(new InputStreamReader(http.getInputStream()));
-
-        } finally {
-            http.disconnect();
-        }
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> params = new HashMap<>();
+                params.put("Content-Type", "application/x-www-form-urlencoded");
+                return params;
+            }
+        };
+        // Aggiungiamo la richiesta alla coda.
+        queue.add(stringRequest);
     }
 }

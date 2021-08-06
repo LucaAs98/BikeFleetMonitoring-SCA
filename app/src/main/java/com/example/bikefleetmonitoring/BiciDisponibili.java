@@ -3,12 +3,18 @@ package com.example.bikefleetmonitoring;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,22 +25,20 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BiciDisponibili extends AppCompatActivity {
 
     RecyclerView recyclerViewBici;
-    ArrayList<DettagliBici> dettagliBici;
+    ArrayList<DettagliBici> dettagliBici = new ArrayList<>();
     AdapterDettagliBici adapterDettagliBici;
 
     Toolbar toolbar;
 
-    String url = "http://192.168.1.110:3000/rastrelliere";
-    String url2 = "http://192.168.1.110:3000/listabici";
-    AsyncTask<Void, Void, Void> mTask;
+    String url2 = "http://192.168.1.122:3000/listabici";
     int idRastrelliera;
-    String jsonString;
     Intent intent;
-    JSONArray arr = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,15 +51,12 @@ public class BiciDisponibili extends AppCompatActivity {
         intent = getIntent();
         idRastrelliera = intent.getIntExtra("id", 0);
 
-        dettagliBici = new ArrayList<>();
-
         recyclerViewBici.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewBici.setHasFixedSize(true);
-        getListaBici();
 
 
-
-
+        url2 = url2 + "?id=" + idRastrelliera;
+        richiestaGetListaBici();
     }
 
     private void findXmlElements() {
@@ -68,118 +69,48 @@ public class BiciDisponibili extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                /* Carica le rastrelliere dal db e va alla mappa delle rastrelliere. */
-                mTask = getRastrelliere();
-                mTask.execute();
+                intent = new Intent(BiciDisponibili.this, MappaRastrelliere.class);
+                startActivity(intent);
             }
         });
     }
 
-    public static String getJsonFromServer(String url) throws IOException {
+    private void richiestaGetListaBici() {
 
-        BufferedReader inputStream = null;
+        //Istanzia la coda di richieste
+        RequestQueue queue = Volley.newRequestQueue(BiciDisponibili.this);
 
-        URL jsonUrl = new URL(url);
-        URLConnection dc = jsonUrl.openConnection();
-
-        dc.setConnectTimeout(5000);
-        dc.setReadTimeout(5000);
-
-        inputStream = new BufferedReader(new InputStreamReader(
-                dc.getInputStream()));
-
-
-        // read the JSON results into a string
-        return inputStream.readLine();
-    }
-
-
-    public AsyncTask<Void, Void, Void> getRastrelliere() {
-        return new AsyncTask<Void, Void, Void>() {
-
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    jsonString = getJsonFromServer(url);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void result) {
-                super.onPostExecute(result);
-                intent = new Intent(BiciDisponibili.this, MappaRastrelliere.class);
-                intent.putExtra("rastrelliere_json", jsonString);
-                startActivity(intent);
-            }
-        };
-    }
-
-
-    private JSONArray executeQweryBici(String url2, int idRastrelliera) throws IOException, JSONException {
-
-        BufferedReader inputStream = null;
-
-        url2 = url2 + "?id=" + idRastrelliera;
-
-        URL jsonUrl = new URL(url2);
-        URLConnection dc = jsonUrl.openConnection();
-
-        dc.setConnectTimeout(5000);
-        dc.setReadTimeout(5000);
-
-        inputStream = new BufferedReader(new InputStreamReader(
-                dc.getInputStream()));
-
-
-        // read the JSON results into a string
-        String jsonS = inputStream.readLine();
-        JSONArray arr = new JSONArray(jsonS);
-
-
-        // read the JSON results into a string
-        return arr;
-    }
-
-
-    private void getListaBici() {
-
-        new AsyncTask<Void, Void, Void>() {
-
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    arr = executeQweryBici(url2, idRastrelliera);
-                } catch (IOException | JSONException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void result) {
-                if (arr != null) {
-                    for (int i = 0; i < arr.length(); i++) {
-                        int id = 0;
-                        try {
-                            id = arr.getJSONObject(i).getInt("id");
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-                        dettagliBici.add(new DettagliBici("Bici " + id, id));
-
+        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url2,
+                response -> {
+                    // Aggiungi codice da fare quando arriva la risposta dalla richiesta
+                    try {
+                        JSONArray arrBiciRastrelliera = new JSONArray(response);
+                        setAdapterBici(arrBiciRastrelliera);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
-                }
-                adapterDettagliBici = new AdapterDettagliBici(dettagliBici,idRastrelliera);
-                recyclerViewBici.setAdapter(adapterDettagliBici);
-
-            }
-        }.execute();
-
+                },
+                error -> {
+                    // Aggiungi codice da fare se la richiesta non è andata a buon fine
+                    //------------------------------------------------------------------
+                });
+        // Aggiungiamo la richiesta alla coda.
+        queue.add(stringRequest);
     }
 
+    private void setAdapterBici(JSONArray arrBiciRastrelliera) {
+        int id;
+        for (int i = 0; i < arrBiciRastrelliera.length(); i++) {
+            id = 0;
+            try {
+                id = arrBiciRastrelliera.getJSONObject(i).getInt("id");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            dettagliBici.add(new DettagliBici("Bici " + id, id));
+        }
+        adapterDettagliBici = new AdapterDettagliBici(dettagliBici, idRastrelliera);
+        recyclerViewBici.setAdapter(adapterDettagliBici);
+    }
 }
