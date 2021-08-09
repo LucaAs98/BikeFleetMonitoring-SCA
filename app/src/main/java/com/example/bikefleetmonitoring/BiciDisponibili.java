@@ -36,7 +36,7 @@ public class BiciDisponibili extends AppCompatActivity {
 
     Toolbar toolbar;
 
-    String url2 = "http://" + Login.ip + ":3000/listabici";
+    String urlGetListaBici = "http://" + Login.ip + ":3000/lista_bici";
     int idRastrelliera;
     Intent intent;
 
@@ -54,34 +54,18 @@ public class BiciDisponibili extends AppCompatActivity {
         recyclerViewBici.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewBici.setHasFixedSize(true);
 
-
-        url2 = url2 + "?id=" + idRastrelliera;
+        urlGetListaBici = urlGetListaBici + "?id=" + idRastrelliera;
         richiestaGetListaBici();
     }
 
-    private void findXmlElements() {
-        recyclerViewBici = findViewById(R.id.recycleViewBikes);
-        toolbar = findViewById(R.id.toolbar);
-    }
-
-    private void initializeToolbar() {
-        toolbar.setTitle("Bici disponibili");
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                intent = new Intent(BiciDisponibili.this, MappaRastrelliere.class);
-                startActivity(intent);
-            }
-        });
-    }
-
+    //Chiediamo la lista delle bici per stamparle quando clicchiamo una rasterlliera
     private void richiestaGetListaBici() {
 
         //Istanzia la coda di richieste
         RequestQueue queue = Volley.newRequestQueue(BiciDisponibili.this);
 
-        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url2,
+        // Stringa per fare la richiesta. Nel caso della lista bici facciamo una richiesta GET all'url "http://192.168.1.122:3000/lista_bici"
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlGetListaBici,
                 response -> {
                     // Aggiungi codice da fare quando arriva la risposta dalla richiesta
                     try {
@@ -93,7 +77,6 @@ public class BiciDisponibili extends AppCompatActivity {
                 },
                 error -> {
                     // Aggiungi codice da fare se la richiesta non è andata a buon fine
-                    //------------------------------------------------------------------
                 });
         // Aggiungiamo la richiesta alla coda.
         queue.add(stringRequest);
@@ -112,5 +95,21 @@ public class BiciDisponibili extends AppCompatActivity {
         }
         adapterDettagliBici = new AdapterDettagliBici(dettagliBici, idRastrelliera);
         recyclerViewBici.setAdapter(adapterDettagliBici);
+    }
+
+    private void findXmlElements() {
+        recyclerViewBici = findViewById(R.id.recycleViewBikes);
+        toolbar = findViewById(R.id.toolbar);
+    }
+
+    private void initializeToolbar() {
+        toolbar.setTitle("Bici disponibili");
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                intent = new Intent(BiciDisponibili.this, MappaRastrelliere.class);
+                startActivity(intent);
+            }
+        });
     }
 }

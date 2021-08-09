@@ -3,7 +3,6 @@ package com.example.bikefleetmonitoring;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -18,45 +17,25 @@ import androidx.appcompat.widget.Toolbar;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.RetryPolicy;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
-import org.json.JSONException;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.StringJoiner;
-
-import java.util.concurrent.ThreadLocalRandom;
 
 public class ConfermaPrenotazione extends AppCompatActivity {
     Toolbar toolbar;
     final Calendar myCalendar = Calendar.getInstance();
-    EditText btnGiornoDa;
-    EditText btnOraDa;
-    EditText btnGiornoA;
-    EditText btnOraA;
-    EditText editTextCliccato;
+    EditText btnGiornoDa, btnOraDa, btnGiornoA, btnOraA, editTextCliccato;
     AppCompatButton btnConfermaPrenot;
-    String url1 = "http://" + Login.ip + ":3000/prenota";
-    int idBici;
-    int idRastrelliera;
+
+    String urlPrenota = "http://" + Login.ip + ":3000/prenota";
+    int idBici, idRastrelliera;
+
     static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     int lunghCodiceGenerato = 10;
     static SecureRandom rnd = new SecureRandom();
@@ -73,7 +52,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
         trovaElementiXML();
         inizializzaToolbar();
 
-
+        /* Metodi per gestire la selezione degli orari e delle date. Non sono importanti da spiegare o capire. */
         DatePickerDialog.OnDateSetListener date = new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
@@ -120,6 +99,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                         myCalendar.get(Calendar.DAY_OF_MONTH)).show();
             }
         });
+
         btnOraA.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -137,9 +117,12 @@ public class ConfermaPrenotazione extends AppCompatActivity {
             }
         });
 
+
+        //Settiamo cosa fare quando si clicca sul bottone per prenotare
         btnConfermaPrenot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Se qualche campo è stato lasciato vuoto si da errore.
                 if (TextUtils.isEmpty(btnGiornoDa.getText().toString())) {
                     btnGiornoDa.setError(" campo 'Giorno inizio' è richiesto.");
                     return;
@@ -160,35 +143,18 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                     return;
                 }
 
+                //Se tutti i campi sono stati compilati allora facciamo la richiesta di prenotazione
                 richiestaPostPrenotazione();
 
+                //Dopo aver effettuato la richiesta di prenotazione torniamo alla home
                 Intent intent = new Intent(ConfermaPrenotazione.this, Home.class);
+                intent.putExtra("idRastrelliera", idRastrelliera);
                 startActivity(intent);
             }
         });
     }
 
-    private void trovaElementiXML() {
-        btnGiornoDa = findViewById(R.id.btnGiornoDa);
-        btnOraDa = findViewById(R.id.btnOraDa);
-        btnGiornoA = findViewById(R.id.btnGiornoA);
-        btnOraA = findViewById(R.id.btnOraA);
-        toolbar = findViewById(R.id.toolbar);
-        btnConfermaPrenot = findViewById(R.id.btnConfermaPrenot);
-    }
-
-    private void inizializzaToolbar() {
-        toolbar.setTitle("Dati Prenotazione");
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(ConfermaPrenotazione.this, BiciDisponibili.class);
-                intent.putExtra("id", idRastrelliera);
-                startActivity(intent);
-            }
-        });
-    }
-
+    //Aggiorna l'editText a seconda della data che è stata selezionata
     private void updateLabel() {
         String myFormat = "dd/MM/yyyy"; //In which you need put here
         SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.US);
@@ -196,6 +162,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
         editTextCliccato.setText(sdf.format(myCalendar.getTime()));
     }
 
+    //Genera una stringa random con una lunghezza precisa
     public String randomString(int len) {
         StringBuilder sb = new StringBuilder(len);
         for (int i = 0; i < len; i++)
@@ -203,16 +170,15 @@ public class ConfermaPrenotazione extends AppCompatActivity {
         return sb.toString();
     }
 
-    /* Richiesta POST............. */
+    //Richiesta POST per effettuare la prenotazione di una bici.
     private void richiestaPostPrenotazione() {
         //Istanzia la coda di richieste
         RequestQueue queue = Volley.newRequestQueue(ConfermaPrenotazione.this);
 
-        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, url1,
+        // Stringa per fare la richiesta. Nel caso della prenotazioen facciamo una richiesta POST all'url "http://192.168.1.122:3000/prenota"
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, urlPrenota,
                 response -> {
                     // Aggiungi codice da fare quando arriva la risposta dalla richiesta
-
                 },
                 error -> {
                     // Aggiungi codice da fare se la richiesta non è andata a buon fine
@@ -221,7 +187,11 @@ public class ConfermaPrenotazione extends AppCompatActivity {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
+                //Generiamo il codice random per sbloccare la bici
                 String cod = randomString(lunghCodiceGenerato);
+
+                /* Passiamo alla richiesta il codice di sblocco, l'utente, data di inizio e data di fine,
+                 * l'id della bici che vogliamo prenotare */
                 params.put("cod", cod);
                 params.put("utente", Home.session);
                 params.put("di", btnGiornoDa.getText().toString() + " " + btnOraDa.getText().toString());
@@ -247,4 +217,25 @@ public class ConfermaPrenotazione extends AppCompatActivity {
         // Aggiungiamo la richiesta alla coda.
         queue.add(stringRequest);
     }
+
+    private void trovaElementiXML() {
+        btnGiornoDa = findViewById(R.id.btnGiornoDa);
+        btnOraDa = findViewById(R.id.btnOraDa);
+        btnGiornoA = findViewById(R.id.btnGiornoA);
+        btnOraA = findViewById(R.id.btnOraA);
+        toolbar = findViewById(R.id.toolbar);
+        btnConfermaPrenot = findViewById(R.id.btnConfermaPrenot);
+    }
+
+    private void inizializzaToolbar() {
+        toolbar.setTitle("Dati Prenotazione");
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(ConfermaPrenotazione.this, BiciDisponibili.class);
+                startActivity(intent);
+            }
+        });
+    }
+
 }

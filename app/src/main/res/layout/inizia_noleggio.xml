@@ -54,7 +54,6 @@
         android:layout_marginLeft="30dp"
         android:layout_marginTop="5dp"
         android:layout_marginRight="30dp"
-        android:autofillHints="Password"
         android:background="@drawable/edittextborder"
         android:inputType="text"
         android:labelFor="@+id/etCodiceNoleggio"

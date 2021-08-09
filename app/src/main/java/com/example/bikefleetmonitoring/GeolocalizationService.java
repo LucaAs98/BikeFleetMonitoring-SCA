@@ -1,28 +1,16 @@
 package com.example.bikefleetmonitoring;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
-import android.content.IntentSender;
-import android.content.pm.PackageManager;
 import android.location.Location;
-import android.media.MediaPlayer;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.Message;
-import android.provider.Settings;
 import android.util.Log;
+import android.util.Pair;
 import android.widget.Toast;
-import android.os.Process;
-
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -50,6 +38,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,9 +51,10 @@ public class GeolocalizationService extends Service {
     String fileScritturaLettura = "position.txt";   // File all'interno della quale andremo a scrivere tutte le posizioni che ci serviranno quando dobbiamo recuperare il tracciato
     // Ricora! Ora è implementato in modo tale che quando riapre l'app il file positions è vuoto!
     int numPosizione = 0;                           // Numero della posizione rilevata. Ci serve principalmente per formattare bene la stringa con le posizioni rilevate.
-    String url1 = "http://" + Login.ip + ":3000/addPosizione";
-    JSONArray jsonArr = new JSONArray();
-    int idBici;
+    String urlAggiungiPosizione = "http://" + Login.ip + ":3000/addPosizione";
+    public static ArrayList<Pair<Double, Double>> pairLatLngArr = new ArrayList<>();
+    private JSONArray jsonArr = new JSONArray();
+    String idBici;
 
     /* All'interno troviamo "OnLocationResult()" il metodo più importante che viene chiamato ogni
      * volta che il sistema effettua una geolocalizzazione dell'utente. */
@@ -96,15 +86,29 @@ public class GeolocalizationService extends Service {
                 writeFileOnInternalStorage(message);           //Scriviamo sul file la posizione nuova
                 numPosizione += 1;                             //Incrementiamo la posizione da scrivere
                 readFileFromInternalStorage();
+
+                //Dopo aver preso l'ultima posizione dell'utente chiediamo di aggiornare la posizione della bici sul db
                 richiestaPostPosizioneUtente();
-                //Log.d("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA______________________", String.valueOf(idBici));
             }
         }
     };
 
-    /* Metodo per leggere dal file, utilizzato per vedere se i dati vengono scritti correttamente. Non sarà utile
-     *  implementarlo nella versione definitiva. Guarda però al suo interno perchè c'è scritto come formattare la
-     *  stringa prima di trasformarla in JSON corretto. */
+    /* Creazione iniziale della coppia di lat e long per essere compatibile con ST_GeomFromGeoJSON, questo non basta,
+     * verrà modificata ulteriormente in Home alla richiesta di termine noleggio! */
+    private void creaGeoJSONCorretto() {
+        double lng, lat;
+        try {
+            for (int i = 0; i < jsonArr.length(); i++) {
+                lng = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (i)).getDouble("long");
+                lat = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (i)).getDouble("lat");
+                pairLatLngArr.add(new Pair<>(lng, lat));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /* Metodo per leggere dal file, salviamo il tutto in modo tale da poter salvare lo storico sul db. */
     public void readFileFromInternalStorage() {
         try {
             FileInputStream fileInputStream = openFileInput(fileScritturaLettura);
@@ -118,16 +122,18 @@ public class GeolocalizationService extends Service {
                 auxline = lines;
             }
             jsonArr.put(new JSONObject("{" + auxline + "}"));
-            Log.d("Stringa: ", stringBuffer.toString());
-            Log.d("JSON: ", jsonArr.toString());
+            /*Log.d("Stringa: ", stringBuffer.toString());
+            Log.d("JSON AUX: ", jsonArr.toString());
+            Log.d("JSON: ", pairLatLngArr.toString());*/
 
+            creaGeoJSONCorretto();
         } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
     }
 
     /* Metodo utile alla scrittura su file situato in memoria interna del telefono. Ogni volta che viene richiamato
-     *  appende al contenuto già presente nel file. */
+     * appende al contenuto già presente nel file. */
     public void writeFileOnInternalStorage(String message) {
         try {
             FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_APPEND);      //Scrive in modo tale da appendere a ciò che è stato già scritto (MODE_APPEND)
@@ -155,15 +161,13 @@ public class GeolocalizationService extends Service {
         //Istanzia la coda di richieste
         RequestQueue queue = Volley.newRequestQueue(GeolocalizationService.this);
 
-        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, url1,
+        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/addPosizione"
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, urlAggiungiPosizione,
                 response -> {
                     // Aggiungi codice da fare quando arriva la risposta dalla richiesta
-                    //------------------------------------------------------------------
                 },
                 error -> {
                     // Aggiungi codice da fare se la richiesta non è andata a buon fine
-                    //------------------------------------------------------------------
                 }) {
             //Utile ad inserire i parametri alla richiesta. Messi nel body
             @Override
@@ -172,10 +176,11 @@ public class GeolocalizationService extends Service {
                 try {
                     String lng = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (jsonArr.length() - 1)).get("long").toString();
                     String lat = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (jsonArr.length() - 1)).get("lat").toString();
-                    //Mettiamo i parametri nel body della richiesta
+
+                    //Mettiamo i parametri nel body della richiesta, passiamo latitudine, longitudine ed id della bici noleggiata
                     params.put("lat", lat);
                     params.put("long", lng);
-                    params.put("id", String.valueOf(idBici));
+                    params.put("id", idBici);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -193,7 +198,7 @@ public class GeolocalizationService extends Service {
         queue.add(stringRequest);
     }
 
-
+    /* Metodi da non toccare, utili per la geolocalizzazione continua. */
     private void checkSettingsAndStartLocationUpdates() {
         LocationSettingsRequest request = new LocationSettingsRequest.Builder()
                 .addLocationRequest(locationRequest).build();
@@ -231,25 +236,19 @@ public class GeolocalizationService extends Service {
         fusedLocationProviderClient.removeLocationUpdates(locationCallback);
     }
 
-
     @Override
     public void onCreate() {
-        /******* ON CREATE ********/
+
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show();
 
-        String[] neededPermissions = {
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-        };
-
         initializeFileOnInternalStorage();
 
-        idBici = intent.getIntExtra("id", -1);
+        idBici = intent.getStringExtra("id");
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         locationRequest = LocationRequest.create();
