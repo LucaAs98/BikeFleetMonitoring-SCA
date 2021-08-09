@@ -15,7 +15,7 @@ import androidx.appcompat.widget.Toolbar;
 
 public class VediCodicePrenot extends AppCompatActivity {
     Toolbar toolbar;
-    AppCompatButton btnCopiaCodice;
+    AppCompatButton btnCopiaCodice, btnAnnullaPrenotazione;
     TextView tvCodice;
     String codP;
 
@@ -44,11 +44,23 @@ public class VediCodicePrenot extends AppCompatActivity {
             }
         });
         tvCodice.setText(codP);
+
+        btnAnnullaPrenotazione.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                /*** Setta che l'utente non ha più prenotazioni. ***/
+
+
+                Intent intent = new Intent(VediCodicePrenot.this, Home.class);
+                startActivity(intent);
+            }
+        });
     }
 
     private void trovaElementiXML() {
         toolbar = findViewById(R.id.toolbar);
         btnCopiaCodice = findViewById(R.id.btnCopiaCodice);
+        btnAnnullaPrenotazione = findViewById(R.id.btnAnnullaPrenotazione);
         tvCodice = findViewById(R.id.tvCodice);
     }
 

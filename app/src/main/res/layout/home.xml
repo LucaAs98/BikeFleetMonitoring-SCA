@@ -74,7 +74,7 @@
         app:layout_constraintTop_toBottomOf="@+id/tvMessaggioIniziale" />
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnAnnullaPrenotazione"
+        android:id="@+id/btnNoleggio"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="30dp"
@@ -82,7 +82,7 @@
         android:layout_marginEnd="30dp"
         android:background="#A30000"
         android:paddingVertical="20dp"
-        android:text="Annulla prenotazione"
+        android:text="Termina noleggio"
         android:textColor="@color/white"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -101,6 +101,6 @@
         android:textSize="16sp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnAnnullaPrenotazione" />
+        app:layout_constraintTop_toBottomOf="@+id/btnNoleggio" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

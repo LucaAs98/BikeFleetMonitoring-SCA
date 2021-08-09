@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar"
         android:layout_width="match_parent"
@@ -36,67 +35,51 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <TextView
-        android:id="@+id/tvMessaggioIniziale"
-        android:layout_width="match_parent"
+        android:id="@+id/tvCodiceNoleggio"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
+        android:layout_marginLeft="30dp"
         android:layout_marginTop="100dp"
-        android:layout_marginEnd="30dp"
-        android:gravity="center_horizontal"
-        android:paddingVertical="20dp"
-        android:text="Questo è il tuo codice di prenotazione bici:"
+        android:layout_marginRight="30dp"
+        android:text="Inserisci il codice noleggio per sbloccare la bici:"
+        android:textColor="@color/primary_text"
         android:textSize="16sp"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/app_bar" />
 
-    <TextView
-        android:id="@+id/tvCodice"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
-        android:layout_marginEnd="30dp"
-        android:fontFamily="@font/titillium_web_bold"
-        android:gravity="center_horizontal"
-        android:paddingVertical="20dp"
-        android:text="1234-ABCD"
-        android:textColor="@color/black"
-        android:textSize="24sp"
+    <EditText
+        android:id="@+id/etCodiceNoleggio"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="30dp"
+        android:autofillHints="Password"
+        android:background="@drawable/edittextborder"
+        android:inputType="text"
+        android:labelFor="@+id/etCodiceNoleggio"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:textAlignment="center"
+        app:layout_constraintHeight_percent="0.08"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvMessaggioIniziale" />
+        app:layout_constraintTop_toBottomOf="@id/tvCodiceNoleggio" />
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnCopiaCodice"
-        android:layout_width="match_parent"
+        android:id="@+id/btnIniziaNoleggio"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
-        android:layout_marginTop="50dp"
-        android:layout_marginEnd="30dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="100dp"
+        android:layout_marginRight="30dp"
+        android:paddingVertical="20dp"
+        android:text="Sblocca bici"
         android:background="@color/primary"
-        android:gravity="center_horizontal"
-        android:paddingVertical="20dp"
-        android:text="Copia codice"
-        android:textSize="16sp"
+        app:layout_constraintHeight_percent="0.1"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvCodice" />
+        app:layout_constraintTop_toBottomOf="@id/etCodiceNoleggio" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnAnnullaPrenotazione"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
-        android:layout_marginTop="80dp"
-        android:layout_marginEnd="30dp"
-        android:background="#A30000"
-        android:gravity="center_horizontal"
-        android:paddingVertical="20dp"
-        android:text="Annulla prenotazione"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnCopiaCodice" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

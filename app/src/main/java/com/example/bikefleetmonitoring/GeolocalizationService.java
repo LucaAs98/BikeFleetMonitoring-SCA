@@ -97,7 +97,7 @@ public class GeolocalizationService extends Service {
                 numPosizione += 1;                             //Incrementiamo la posizione da scrivere
                 readFileFromInternalStorage();
                 richiestaPostPosizioneUtente();
-                Log.d("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA______________________", String.valueOf(idBici));
+                //Log.d("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA______________________", String.valueOf(idBici));
             }
         }
     };

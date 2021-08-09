@@ -161,13 +161,8 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                 }
 
                 richiestaPostPrenotazione();
-                Intent intent = new Intent(ConfermaPrenotazione.this, GeolocalizationService.class);
-                intent.putExtra("id", idBici);
-                startService(intent);
 
-
-                intent = new Intent(ConfermaPrenotazione.this, Home.class);
-
+                Intent intent = new Intent(ConfermaPrenotazione.this, Home.class);
                 startActivity(intent);
             }
         });

@@ -34,6 +34,7 @@
         <activity android:name=".Home" />
         <activity android:name=".VediCodicePrenot" />
         <activity android:name=".ConfermaPrenotazione" />
+        <activity android:name=".IniziaNoleggio" />
 
         <meta-data
             android:name="preloaded_fonts"

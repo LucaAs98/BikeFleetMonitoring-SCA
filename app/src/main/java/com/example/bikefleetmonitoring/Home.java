@@ -1,12 +1,14 @@
 package com.example.bikefleetmonitoring;
 
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.annotation.ColorInt;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.Toolbar;
@@ -15,30 +17,21 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.firebase.auth.FirebaseAuth;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Home extends AppCompatActivity {
     public static String session = null;
-    AppCompatButton btnPrenotaBici, btnAnnullaPrenotazione, btnLogout;
+    AppCompatButton btnPrenotaBici, btnNoleggio, btnLogout;
     TextView tvMessaggioIniziale, tvVediCodPrenot;
     Toolbar toolbar;
     boolean prenotato;
+    boolean noleggioIniziato;
 
     String url = "http://" + Login.ip + ":3000/delPren";
     String url2 = "http://" + Login.ip + ":3000/vis_pren";
-    String codP = null; //codice alfanumerico della prenotazione
+    String codP = null, idBici; //Codice alfanumerico della prenotazione
 
 
     @Override
@@ -47,8 +40,9 @@ public class Home extends AppCompatActivity {
         setContentView(R.layout.home);
 
         trovaElementiXML();
-
         inizializzaToolbar();
+
+        noleggioIniziato = false;
 
         /* Se premiamo il pulsante di Logout andiamo al login e togliamo l'istanza all'utente. */
         btnLogout.setOnClickListener(new View.OnClickListener() {
@@ -68,7 +62,7 @@ public class Home extends AppCompatActivity {
 
     private void trovaElementiXML() {
         btnPrenotaBici = findViewById(R.id.btnPrenotaBici);
-        btnAnnullaPrenotazione = findViewById(R.id.btnAnnullaPrenotazione);
+        btnNoleggio = findViewById(R.id.btnNoleggio);
         btnLogout = findViewById(R.id.btnLogout);
         tvMessaggioIniziale = findViewById(R.id.tvMessaggioIniziale);
         tvVediCodPrenot = findViewById(R.id.tvVediCodPrenot);
@@ -80,14 +74,21 @@ public class Home extends AppCompatActivity {
     }
 
     private void inizializzaPrenotato() {
-        btnAnnullaPrenotazione.setOnClickListener(new View.OnClickListener() {
+        btnNoleggio.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                richiestaGetAnnullaPren();
-                Intent intent = new Intent(Home.this, GeolocalizationService.class);
-                stopService(intent);
-                intent = new Intent(Home.this, Home.class);
-                startActivity(intent);
+                if (noleggioIniziato) {
+                    richiestaGetTerminaNoleggio();
+                    Intent intent = new Intent(Home.this, GeolocalizationService.class);
+                    stopService(intent);
+                    intent = new Intent(Home.this, Home.class);
+                    startActivity(intent);
+                } else {
+                    Intent intent = new Intent(Home.this, IniziaNoleggio.class);
+                    intent.putExtra("codice", codP);
+                    intent.putExtra("bicicletta", idBici);
+                    startActivity(intent);
+                }
             }
         });
 
@@ -102,7 +103,18 @@ public class Home extends AppCompatActivity {
         btnPrenotaBici.setVisibility(View.GONE);
 
 
-        tvMessaggioIniziale.setText("Ciao " + Home.session + "!\nStai già noleggiando una bici, vuoi annullare la tua prenotazione?");
+        if (noleggioIniziato) {
+            tvMessaggioIniziale.setText("Ciao " + Home.session + "!\nStai già noleggiando una bici, vuoi terminarla?");
+
+        } else {
+            tvMessaggioIniziale.setText("Ciao " + Home.session + "!\nStai prenotando una bici, vuoi iniziare il noleggio?");
+            TypedValue typedValue = new TypedValue();
+            getTheme().resolveAttribute(R.attr.colorPrimary, typedValue, true);
+            int color = typedValue.data;
+            btnNoleggio.setBackgroundColor(color);
+            btnNoleggio.setTextColor(Color.BLACK);
+            btnNoleggio.setText("Sblocca bici");
+        }
     }
 
     public void inizializzaNonPrenotato() {
@@ -114,7 +126,7 @@ public class Home extends AppCompatActivity {
             }
         });
         tvVediCodPrenot.setVisibility(View.GONE);
-        btnAnnullaPrenotazione.setVisibility(View.GONE);
+        btnNoleggio.setVisibility(View.GONE);
 
 
         tvMessaggioIniziale.setText("Ciao " + Home.session + "!\nInizia subito a noleggiare una bici vicino a te!");
@@ -135,6 +147,8 @@ public class Home extends AppCompatActivity {
                         arrCodici = new JSONArray(response);
                         if (arrCodici.length() == 1) {
                             codP = arrCodici.getJSONObject(0).getString("codice");
+                            idBici = arrCodici.getJSONObject(0).getString("bicicletta");
+                            noleggioIniziato = arrCodici.getJSONObject(0).getBoolean("iniziato");
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -158,7 +172,7 @@ public class Home extends AppCompatActivity {
         }
     }
 
-    private void richiestaGetAnnullaPren() {
+    private void richiestaGetTerminaNoleggio() {
         url = url + "?codPren=" + codP;
 
         //Istanzia la coda di richieste
@@ -176,6 +190,5 @@ public class Home extends AppCompatActivity {
                 });
         // Aggiungiamo la richiesta alla coda.
         queue.add(stringRequest);
-
     }
 }
