@@ -43,17 +43,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GeolocalizationService extends Service {
-    private static final String TAG = "MyLocationDemoActivity";
-    int LOCATION_REQUEST_CODE = 10001;
-
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest locationRequest;
     String fileScritturaLettura = "position.txt";   // File all'interno della quale andremo a scrivere tutte le posizioni che ci serviranno quando dobbiamo recuperare il tracciato
-    // Ricora! Ora è implementato in modo tale che quando riapre l'app il file positions è vuoto!
-    int numPosizione = 0;                           // Numero della posizione rilevata. Ci serve principalmente per formattare bene la stringa con le posizioni rilevate.
     String urlAggiungiPosizione = "http://" + Login.ip + ":3000/addPosizione";
     public static ArrayList<Pair<Double, Double>> pairLatLngArr = new ArrayList<>();
-    private JSONArray jsonArr = new JSONArray();
     String idBici;
 
     /* All'interno troviamo "OnLocationResult()" il metodo più importante che viene chiamato ogni
@@ -65,84 +59,16 @@ public class GeolocalizationService extends Service {
                 return;
             }
             for (Location location : locationResult.getLocations()) {
-                String message;       //Messaggio nella quale verranno inserite latitudine e longitudine, sarà poi formattato per trasformarlo in JSON corretto (Vedi writeFileOnInternalStorage)
-                JSONObject json = new JSONObject();
-                try {
-                    json.put("lat", location.getLatitude());
-                    json.put("long", location.getLongitude());
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                message = json.toString();
+                double lat = location.getLatitude();
+                double lng = location.getLongitude();
 
-                /* Iniziamo a formattare "message" per avere un JSON corretto. Il risultato sarà una
-                 * lista di posizioni numerate in base a quando sono state rilevate. */
-                message = "pos_" + numPosizione + ":" + message;
-
-                // Se la posizione non è la prima, mettiamo una virgola prima per separare la nuova posizione dalla precedente.
-                if (numPosizione > 0) {
-                    message = "," + message;
-                }
-                writeFileOnInternalStorage(message);           //Scriviamo sul file la posizione nuova
-                numPosizione += 1;                             //Incrementiamo la posizione da scrivere
-                readFileFromInternalStorage();
+                pairLatLngArr.add(new Pair<>(lng, lat));
 
                 //Dopo aver preso l'ultima posizione dell'utente chiediamo di aggiornare la posizione della bici sul db
                 richiestaPostPosizioneUtente();
             }
         }
     };
-
-    /* Creazione iniziale della coppia di lat e long per essere compatibile con ST_GeomFromGeoJSON, questo non basta,
-     * verrà modificata ulteriormente in Home alla richiesta di termine noleggio! */
-    private void creaGeoJSONCorretto() {
-        double lng, lat;
-        try {
-            for (int i = 0; i < jsonArr.length(); i++) {
-                lng = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (i)).getDouble("long");
-                lat = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (i)).getDouble("lat");
-                pairLatLngArr.add(new Pair<>(lng, lat));
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /* Metodo per leggere dal file, salviamo il tutto in modo tale da poter salvare lo storico sul db. */
-    public void readFileFromInternalStorage() {
-        try {
-            FileInputStream fileInputStream = openFileInput(fileScritturaLettura);
-            InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
-
-            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-            StringBuilder stringBuffer = new StringBuilder();
-            String lines, auxline = "";
-            while ((lines = bufferedReader.readLine()) != null) {
-                stringBuffer.append(lines).append("\n");
-                auxline = lines;
-            }
-            jsonArr.put(new JSONObject("{" + auxline + "}"));
-            /*Log.d("Stringa: ", stringBuffer.toString());
-            Log.d("JSON AUX: ", jsonArr.toString());
-            Log.d("JSON: ", pairLatLngArr.toString());*/
-
-            creaGeoJSONCorretto();
-        } catch (IOException | JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /* Metodo utile alla scrittura su file situato in memoria interna del telefono. Ogni volta che viene richiamato
-     * appende al contenuto già presente nel file. */
-    public void writeFileOnInternalStorage(String message) {
-        try {
-            FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_APPEND);      //Scrive in modo tale da appendere a ciò che è stato già scritto (MODE_APPEND)
-            fileOutputStream.write(message.getBytes());     //Scrittura vera e propria
-            fileOutputStream.close();                       //Chiusura del file
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     /* Metodo chiamato una volta sola all'inizio, per pulire il file se presente. */
     public void initializeFileOnInternalStorage() {
@@ -173,17 +99,15 @@ public class GeolocalizationService extends Service {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
-                try {
-                    String lng = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (jsonArr.length() - 1)).get("long").toString();
-                    String lat = jsonArr.getJSONObject(jsonArr.length() - 1).getJSONObject("pos_" + (jsonArr.length() - 1)).get("lat").toString();
 
-                    //Mettiamo i parametri nel body della richiesta, passiamo latitudine, longitudine ed id della bici noleggiata
-                    params.put("lat", lat);
-                    params.put("long", lng);
-                    params.put("id", idBici);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                String lng = pairLatLngArr.get(pairLatLngArr.size() - 1).first.toString();
+                String lat = pairLatLngArr.get(pairLatLngArr.size() - 1).second.toString();
+
+                //Mettiamo i parametri nel body della richiesta, passiamo latitudine, longitudine ed id della bici noleggiata
+                params.put("lat", lat);
+                params.put("long", lng);
+                params.put("id", idBici);
+
                 return params;
             }
 

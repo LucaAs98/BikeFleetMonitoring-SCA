@@ -198,15 +198,15 @@ public class Home extends AppCompatActivity {
 
                         //Se è stata trovata una rastrelliera sarà nella prima posizione
                         if (arrRastr.length() > 0) {
+                            //Terminiamo la geolocalizzazione
+                            Intent intent = new Intent(Home.this, GeolocalizationService.class);
+                            stopService(intent);
+
                             JSONObject rastrelliera = arrRastr.getJSONObject(0);
                             idRastrellieraVicino = rastrelliera.getInt("id");
 
                             //Terminiamo il noleggio
                             richiestaGetTerminaNoleggio();
-
-                            //Terminiamo la geolocalizzazione
-                            Intent intent = new Intent(Home.this, GeolocalizationService.class);
-                            stopService(intent);
 
                             //Ricarichiamo la pagina
                             intent = new Intent(Home.this, Home.class);
