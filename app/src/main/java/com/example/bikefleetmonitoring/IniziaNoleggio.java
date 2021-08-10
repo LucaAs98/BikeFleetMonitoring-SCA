@@ -1,26 +1,42 @@
 package com.example.bikefleetmonitoring;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class IniziaNoleggio extends AppCompatActivity {
@@ -37,6 +53,7 @@ public class IniziaNoleggio extends AppCompatActivity {
     String idRastrellieraBici = "";         //Rastrelliera dov'è situata la bici prenotata
 
     /**** Prendi la posizione reale!!!!!!!!!!!!  ***/
+    FusedLocationProviderClient fusedLocationProviderClient;
     double longUtente = 11.344264, latUtente = 44.48761;
 
     @Override
@@ -47,6 +64,7 @@ public class IniziaNoleggio extends AppCompatActivity {
         trovaElementiXML();
         inizializzaToolbar();
 
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         Intent intent = getIntent();
         codP = intent.getStringExtra("codice");
         idBici = intent.getStringExtra("bicicletta");
@@ -60,14 +78,49 @@ public class IniziaNoleggio extends AppCompatActivity {
                 if (!checkCodice()) {
                     etCodiceNoleggio.setError("Codice noleggio errato!");
                 } else {
-                    /* Se il codice corrisponde dobbiamo controllare che l'utente si trovi in prossimità ù
-                     * della rastrelliera dov'è situata la bici prenotata.  */
-                    urlRastrellieraVicino = urlRastrellieraVicino + "?lng=" + longUtente + "&lat=" + latUtente;
-                    richiestaGetRastrellieraVicino();
+                    /* Se il codice corrisponde dobbiamo controllare che l'utente si trovi in prossimità
+                     * della rastrelliera dov'è situata la bici prenotata. Successivamente facciamo la richiesta
+                     * di noleggio. */
+                    getUserPosition();
                 }
             }
         });
     }
+
+    /* Prendiamo la posizione dell'utente per verificare che si trovi vicino ad una rastrelliera. */
+    @SuppressLint("MissingPermission")
+    private void getUserPosition() {
+        if (ActivityCompat.checkSelfPermission(IniziaNoleggio.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            //Se abbiamo i permessi, prendiamo la posizione
+            fusedLocationProviderClient.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
+                @Override
+                public void onComplete(@NonNull Task<Location> task) {
+                    //Inizializziamo la posizione
+                    Location location = task.getResult();
+                    if (location != null) {
+                        //Inizializziamo geoCoder
+                        Geocoder geocoder = new Geocoder(IniziaNoleggio.this, Locale.getDefault());
+
+                        //Inizializziamo la lista degli indirizzi
+                        try {
+                            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+
+                            latUtente = addresses.get(0).getLatitude();
+                            longUtente = addresses.get(0).getLongitude();
+
+                            urlRastrellieraVicino = urlRastrellieraVicino + "?lng=" + longUtente + "&lat=" + latUtente;
+                            richiestaGetRastrellieraVicino();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+        } else {
+            ActivityCompat.requestPermissions(IniziaNoleggio.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 44);
+        }
+    }
+
 
     //Ritorniamo se il codice inserito corrisponde a quello dato
     private boolean checkCodice() {
@@ -158,7 +211,7 @@ public class IniziaNoleggio extends AppCompatActivity {
     }
 
     /* Facciamo la richiesta di noleggio. Questa setta semplicemente a true l'attributo "iniziato"
-    * nella tabella noleggio, in corrispondenza della prenotazione corrente dell'utente */
+     * nella tabella noleggio, in corrispondenza della prenotazione corrente dell'utente */
     private void richiestaPostNoleggio() {
         //Istanzia la coda di richieste
         RequestQueue queue = Volley.newRequestQueue(IniziaNoleggio.this);
