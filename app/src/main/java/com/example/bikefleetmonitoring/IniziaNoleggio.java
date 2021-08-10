@@ -8,7 +8,6 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -108,7 +107,7 @@ public class IniziaNoleggio extends AppCompatActivity {
                             latUtente = addresses.get(0).getLatitude();
                             longUtente = addresses.get(0).getLongitude();
 
-                            urlRastrellieraVicino = urlRastrellieraVicino + "?lng=" + longUtente + "&lat=" + latUtente;
+
                             richiestaGetRastrellieraVicino();
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -134,7 +133,7 @@ public class IniziaNoleggio extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(IniziaNoleggio.this);
 
         // Stringa per fare la richiesta. Nel caso di ritrovare la rastrelliera vicino all'utente facciamo una richiesta GET all'url "http://192.168.1.122:3000/checkDistance"
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlRastrellieraVicino,
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlRastrellieraVicino + "?lng=" + longUtente + "&lat=" + latUtente,
                 response -> {                    // Aggiungi codice da fare quando arriva la risposta dalla richiesta
                     JSONArray arrRastr;
                     try {
