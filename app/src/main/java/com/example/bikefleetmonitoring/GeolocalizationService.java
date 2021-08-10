@@ -45,7 +45,6 @@ import java.util.Map;
 public class GeolocalizationService extends Service {
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest locationRequest;
-    String fileScritturaLettura = "position.txt";   // File all'interno della quale andremo a scrivere tutte le posizioni che ci serviranno quando dobbiamo recuperare il tracciato
     String urlAggiungiPosizione = "http://" + Login.ip + ":3000/addPosizione";
     public static ArrayList<Pair<Double, Double>> pairLatLngArr = new ArrayList<>();
     String idBici;
@@ -69,18 +68,6 @@ public class GeolocalizationService extends Service {
             }
         }
     };
-
-    /* Metodo chiamato una volta sola all'inizio, per pulire il file se presente. */
-    public void initializeFileOnInternalStorage() {
-        String init = "";
-        try {
-            FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_PRIVATE);     //La prima volta che apre l'app viene sovrascritto il file (MODE_PRIVATE)
-            fileOutputStream.write(init.getBytes());
-            fileOutputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     /* Richiesta POST per aggiungere la posizione dell'utente. */
     private void richiestaPostPosizioneUtente() {
@@ -124,19 +111,18 @@ public class GeolocalizationService extends Service {
 
     /* Metodi da non toccare, utili per la geolocalizzazione continua. */
     private void checkSettingsAndStartLocationUpdates() {
-        LocationSettingsRequest request = new LocationSettingsRequest.Builder()
-                .addLocationRequest(locationRequest).build();
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
         SettingsClient client = LocationServices.getSettingsClient(this);
+        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
 
-        Task<LocationSettingsResponse> locationSettingsResponseTask = client.checkLocationSettings(request);
-        locationSettingsResponseTask.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
+        task.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
             @Override
             public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
                 //Settings of device are satisfied and we can start location updates
                 startLocationUpdates();
             }
         });
-        locationSettingsResponseTask.addOnFailureListener(new OnFailureListener() {
+        task.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
                 if (e instanceof ResolvableApiException) {
@@ -169,8 +155,6 @@ public class GeolocalizationService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show();
 
-        initializeFileOnInternalStorage();
-
         idBici = intent.getStringExtra("id");
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
@@ -181,7 +165,6 @@ public class GeolocalizationService extends Service {
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         checkSettingsAndStartLocationUpdates();
-
 
         return START_STICKY;
     }
