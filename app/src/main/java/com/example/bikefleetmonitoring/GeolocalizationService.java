@@ -31,13 +31,7 @@ import com.google.android.gms.tasks.Task;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +40,7 @@ public class GeolocalizationService extends Service {
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest locationRequest;
     String urlAggiungiPosizione = "http://" + Login.ip + ":3000/addPosizione";
+    String urlIntersezioneGeofence = "http://" + Login.ip + ":3000/intersezione_geofence";
     public static ArrayList<Pair<Double, Double>> pairLatLngArr = new ArrayList<>();
     String idBici;
 
@@ -65,6 +60,8 @@ public class GeolocalizationService extends Service {
 
                 //Dopo aver preso l'ultima posizione dell'utente chiediamo di aggiornare la posizione della bici sul db
                 richiestaPostPosizioneUtente();
+
+                checkGeofenceIntersecata(lat, lng);
             }
         }
     };
@@ -105,6 +102,34 @@ public class GeolocalizationService extends Service {
                 return params;
             }
         };
+        // Aggiungiamo la richiesta alla coda.
+        queue.add(stringRequest);
+    }
+
+    private void checkGeofenceIntersecata(double lat, double lng) {
+
+        RequestQueue queue = Volley.newRequestQueue(GeolocalizationService.this);
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlIntersezioneGeofence + "?lng=" + lng + "&lat=" + lat,
+                response -> {
+                    // Aggiungi codice da fare quando arriva la risposta dalla richiesta
+                    try {
+                        JSONArray arr = new JSONArray(response);
+                        if (arr.length() > 0) {
+                            String name = arr.getJSONObject(0).getString("name");
+
+                            Log.d("NOME GEOFENCE VIETATA INTERSECATA ----------------->", name);
+                        } else {
+                            Log.d("ATTENZIONE!!!!!!!!!!!!!!!!!!!!!!! ----------------->", "NESSUNA GEOFENCE INTERSECATA");
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> {
+                    // Aggiungi codice da fare se la richiesta non è andata a buon fine
+                });
+
         // Aggiungiamo la richiesta alla coda.
         queue.add(stringRequest);
     }
