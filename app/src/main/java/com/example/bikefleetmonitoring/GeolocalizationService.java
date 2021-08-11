@@ -1,6 +1,7 @@
 package com.example.bikefleetmonitoring;
 
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
@@ -11,6 +12,8 @@ import android.util.Pair;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -43,6 +46,9 @@ public class GeolocalizationService extends Service {
     String urlIntersezioneGeofence = "http://" + Login.ip + ":3000/intersezione_geofence";
     public static ArrayList<Pair<Double, Double>> pairLatLngArr = new ArrayList<>();
     String idBici;
+    int idNotifica = 0;
+    String nomeGeofence = "";
+
 
     /* All'interno troviamo "OnLocationResult()" il metodo più importante che viene chiamato ogni
      * volta che il sistema effettua una geolocalizzazione dell'utente. */
@@ -108,6 +114,7 @@ public class GeolocalizationService extends Service {
 
     private void checkGeofenceIntersecata(double lat, double lng) {
 
+
         RequestQueue queue = Volley.newRequestQueue(GeolocalizationService.this);
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, urlIntersezioneGeofence + "?lng=" + lng + "&lat=" + lat,
@@ -116,11 +123,50 @@ public class GeolocalizationService extends Service {
                     try {
                         JSONArray arr = new JSONArray(response);
                         if (arr.length() > 0) {
-                            String name = arr.getJSONObject(0).getString("name");
+                            int index = checkGeofence(arr);
+                            if (index != -1) {
+                                String titoloGeofence ="";
 
-                            Log.d("NOME GEOFENCE VIETATA INTERSECATA ----------------->", name);
+                                nomeGeofence = arr.getJSONObject(index).getString("name");
+                                String messageGeofence = arr.getJSONObject(index).getString("message");
+                                boolean tipoArea = arr.getJSONObject(index).getBoolean("vietato");
+
+                                        // Create an explicit intent for an Activity in your app
+                                        Intent intent = new Intent(this, Home.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+
+
+                                if(tipoArea){
+                                    titoloGeofence = "Attenzione! Ingresso in area di geofence vietata!";
+                                }else{
+                                    titoloGeofence = "Attenzione! Ingresso in area di geofence PoI!";
+                                }
+
+                                if (messageGeofence.equals("null")) {
+                                    messageGeofence = "Ingresso nell'area: " + nomeGeofence;
+                                }
+                                NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "BikeFleetMonitoring")
+                                        .setSmallIcon(R.mipmap.ic_bike)
+                                        .setContentTitle(titoloGeofence)
+                                        .setContentText(messageGeofence)
+                                        /*.setStyle(new NotificationCompat.BigTextStyle()
+                                                .bigText("Much longer text that cannot fit one line..."))*/
+                                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                        // Set the intent that will fire when the user taps the notification
+                                        .setContentIntent(pendingIntent)
+                                        .setAutoCancel(true);
+
+                                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+                                // notificationId is a unique int for each notification that you must define
+                                notificationManager.notify(idNotifica, builder.build());
+                                idNotifica++;
+                            }
+
+
                         } else {
-                            Log.d("ATTENZIONE!!!!!!!!!!!!!!!!!!!!!!! ----------------->", "NESSUNA GEOFENCE INTERSECATA");
+                            nomeGeofence = "";
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -132,6 +178,28 @@ public class GeolocalizationService extends Service {
 
         // Aggiungiamo la richiesta alla coda.
         queue.add(stringRequest);
+    }
+
+    private int checkGeofence(JSONArray arr) {
+        String name = null;
+        try {
+            name = arr.getJSONObject(0).getString("name");
+            if (name.equals(nomeGeofence)) {
+
+                if (arr.length() > 1) {
+
+                    return 1;
+
+                }
+                return -1;
+            } else {
+                return 0;
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return -1;
     }
 
     /* Metodi da non toccare, utili per la geolocalizzazione continua. */
@@ -185,8 +253,8 @@ public class GeolocalizationService extends Service {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         locationRequest = LocationRequest.create();
-        locationRequest.setInterval(4000);
-        locationRequest.setFastestInterval(2000);
+        locationRequest.setInterval(500);
+        locationRequest.setFastestInterval(0);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         checkSettingsAndStartLocationUpdates();

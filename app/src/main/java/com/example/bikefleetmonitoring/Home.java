@@ -1,5 +1,7 @@
 package com.example.bikefleetmonitoring;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -50,6 +52,7 @@ public class Home extends AppCompatActivity {
 
         trovaElementiXML();
         inizializzaToolbar();
+        createNotificationChannel();
 
         noleggioIniziato = false;
 
@@ -206,7 +209,7 @@ public class Home extends AppCompatActivity {
                             idRastrellieraVicino = rastrelliera.getInt("id");
 
                             //Terminiamo il noleggio
-                            richiestaGetTerminaNoleggio();
+                            richiestaPostTerminaNoleggio();
 
                             //Ricarichiamo la pagina
                             intent = new Intent(Home.this, Home.class);
@@ -228,9 +231,9 @@ public class Home extends AppCompatActivity {
     }
 
     /* Facciamo la richiesta di terminare il noleggio, passando il codice noleggio, la geometria delle
-    *  posizioni che l'utente ha accumulato per salvarle nello storico, l'id della bici e l'id della
-    * rastrelliera nella quale stiamo mettendo la bici. */
-    private void richiestaGetTerminaNoleggio() {
+     *  posizioni che l'utente ha accumulato per salvarle nello storico, l'id della bici e l'id della
+     * rastrelliera nella quale stiamo mettendo la bici. */
+    private void richiestaPostTerminaNoleggio() {
         //Istanzia la coda di richieste
         RequestQueue queue = Volley.newRequestQueue(Home.this);
 
@@ -291,5 +294,19 @@ public class Home extends AppCompatActivity {
 
     private void inizializzaToolbar() {
         toolbar.setTitle("Home");
+    }
+
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        CharSequence name = "BikeFleetMonitoring";
+        String description = "BikeFleetMonitoring";
+        int importance = NotificationManager.IMPORTANCE_DEFAULT;
+        NotificationChannel channel = new NotificationChannel("BikeFleetMonitoring", name, importance);
+        channel.setDescription(description);
+        // Register the channel with the system; you can't change the importance
+        // or other notification behaviors after this
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
     }
 }
