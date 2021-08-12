@@ -1,10 +1,8 @@
 package com.example.bikefleetmonitoring;
 
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,25 +15,17 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.firebase.auth.FirebaseAuth;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 
 public class Login extends AppCompatActivity {
     public static String ip;
     String ipLuca = "192.168.1.122";
     String ipMauro = "192.168.1.110";
-    String ipAndrea = "192.168.1.8";
+    String ipAndrea = "192.168.1.9";
 
     Button btnLogin;
     TextView tvVaiARegistrazione;
@@ -50,7 +40,7 @@ public class Login extends AppCompatActivity {
         setContentView(R.layout.login);
 
         findXmlElements();
-        ip = ipLuca;
+        ip = ipAndrea;
         url = "http://" + ip + ":3000/users";
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
