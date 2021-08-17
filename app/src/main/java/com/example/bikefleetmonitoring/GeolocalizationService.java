@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.location.Location;
 import android.os.IBinder;
 import android.os.Looper;
-import android.util.Log;
 import android.util.Pair;
 import android.widget.Toast;
 
@@ -48,6 +47,7 @@ public class GeolocalizationService extends Service {
     String idBici;
     int idNotifica = 0;
     String nomeGeofence = "";
+    ArrayList<String> listaGeofence = new ArrayList<>();
 
 
     /* All'interno troviamo "OnLocationResult()" il metodo più importante che viene chiamato ogni
@@ -123,23 +123,24 @@ public class GeolocalizationService extends Service {
                     try {
                         JSONArray arr = new JSONArray(response);
                         if (arr.length() > 0) {
-                            int index = checkGeofence(arr);
-                            if (index != -1) {
-                                String titoloGeofence ="";
+                            ArrayList<Integer> geofenceToNotify = checkGeofence2(arr);
 
-                                nomeGeofence = arr.getJSONObject(index).getString("name");
-                                String messageGeofence = arr.getJSONObject(index).getString("message");
-                                boolean tipoArea = arr.getJSONObject(index).getBoolean("vietato");
+                            for (Integer n : geofenceToNotify) {
+                                String titoloGeofence = "";
 
-                                        // Create an explicit intent for an Activity in your app
-                                        Intent intent = new Intent(this, Home.class);
+                                nomeGeofence = arr.getJSONObject(n).getString("name");
+                                String messageGeofence = arr.getJSONObject(n).getString("message");
+                                boolean tipoArea = arr.getJSONObject(n).getBoolean("vietato");
+
+                                // Create an explicit intent for an Activity in your app
+                                Intent intent = new Intent(this, Home.class);
                                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                                 PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
 
-                                if(tipoArea){
+                                if (tipoArea) {
                                     titoloGeofence = "Attenzione! Ingresso in area di geofence vietata!";
-                                }else{
+                                } else {
                                     titoloGeofence = "Attenzione! Ingresso in area di geofence PoI!";
                                 }
 
@@ -162,11 +163,10 @@ public class GeolocalizationService extends Service {
                                 // notificationId is a unique int for each notification that you must define
                                 notificationManager.notify(idNotifica, builder.build());
                                 idNotifica++;
+                                listaGeofence.add(nomeGeofence);
                             }
-
-
                         } else {
-                            nomeGeofence = "";
+                            listaGeofence.clear();
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -201,6 +201,55 @@ public class GeolocalizationService extends Service {
 
         return -1;
     }
+
+    private ArrayList<Integer> checkGeofence2(JSONArray arr) {
+        String name = null;
+        ArrayList<Integer> geoToPrint = new ArrayList<>();
+        for (int i = 0; i < arr.length(); i++) {
+            try {
+                name = arr.getJSONObject(i).getString("name");
+                if (!listaGeofence.contains(name)) {
+                    geoToPrint.add(i);
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        clearArrayGeofence(arr);
+
+        return geoToPrint;
+    }
+
+    private void clearArrayGeofence(JSONArray arr){
+        HashMap<String, Boolean> listageofenceAttuali = new HashMap<>();
+
+        for(String s : listaGeofence){
+            listageofenceAttuali.put(s, false);
+        }
+
+
+        for (int i = 0; i < arr.length(); i++) {
+            String name = null;
+            try {
+                name = arr.getJSONObject(i).getString("name");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            if(listaGeofence.contains(name)){
+                listageofenceAttuali.replace(name, true);
+            }
+        }
+
+
+        for(String s: listageofenceAttuali.keySet()){
+            if(!listageofenceAttuali.get(s)){
+                listaGeofence.remove(s);
+            }
+        }
+    }
+
 
     /* Metodi da non toccare, utili per la geolocalizzazione continua. */
     private void checkSettingsAndStartLocationUpdates() {
