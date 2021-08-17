@@ -16,7 +16,15 @@
 
 package com.example.bikefleetmonitoring;
 
+import android.content.Context;
+import android.content.res.Resources;
+
 import com.google.android.gms.location.DetectedActivity;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 
 /**
  * Constants used in this sample.
@@ -38,18 +46,13 @@ final class Constants {
      * detections while improving battery life. A value of 0 results in activity detections at the
      * fastest possible rate.
      */
-    static final long DETECTION_INTERVAL_IN_MILLISECONDS = 30 * 1000; // 30 seconds
+    static final long DETECTION_INTERVAL_IN_MILLISECONDS = 0;
     /**
      * List of DetectedActivity types that we monitor in this sample.
      */
     static final int[] MONITORED_ACTIVITIES = {
-            DetectedActivity.STILL,
-            DetectedActivity.ON_FOOT,
             DetectedActivity.WALKING,
-            DetectedActivity.RUNNING,
             DetectedActivity.ON_BICYCLE,
-            DetectedActivity.IN_VEHICLE,
-            DetectedActivity.TILTING,
             DetectedActivity.UNKNOWN
     };
 }

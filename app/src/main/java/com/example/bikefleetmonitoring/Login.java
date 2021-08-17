@@ -40,7 +40,7 @@ public class Login extends AppCompatActivity {
         setContentView(R.layout.login);
 
         findXmlElements();
-        ip = ipAndrea;
+        ip = ipLuca;
         url = "http://" + ip + ":3000/users";
 
         btnLogin.setOnClickListener(new View.OnClickListener() {

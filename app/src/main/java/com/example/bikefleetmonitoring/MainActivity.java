@@ -16,23 +16,15 @@
 
 package com.example.bikefleetmonitoring;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -40,15 +32,12 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.ActivityRecognitionClient;
-import com.google.android.gms.location.ActivityTransition;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -63,8 +52,8 @@ public class MainActivity extends AppCompatActivity
     private ActivityRecognitionClient mActivityRecognitionClient;
 
     // UI elements.
-    private Button mRequestActivityUpdatesButton;
-    private Button mRemoveActivityUpdatesButton;
+    /*private Button mRequestActivityUpdatesButton;
+    private Button mRemoveActivityUpdatesButton;*/
 
     /**
      * Adapter backed by a list of DetectedActivity objects.
@@ -81,27 +70,26 @@ public class MainActivity extends AppCompatActivity
         mContext = this;
 
         // Get the UI widgets.
-        mRequestActivityUpdatesButton = (Button) findViewById(R.id.request_activity_updates_button);
-        mRemoveActivityUpdatesButton = (Button) findViewById(R.id.remove_activity_updates_button);
-        ListView detectedActivitiesListView = (ListView) findViewById(
-                R.id.detected_activities_listview);
+        /*mRequestActivityUpdatesButton = (Button) findViewById(R.id.request_activity_updates_button);
+        mRemoveActivityUpdatesButton = (Button) findViewById(R.id.remove_activity_updates_button);*/
+       /* ListView detectedActivitiesListView = (ListView) findViewById(R.id.detected_activities_listview);*/
 
         // Enable either the Request Updates button or the Remove Updates button depending on
         // whether activity updates have been requested.
-        setButtonsEnabledState();
+        /*setButtonsEnabledState();*/
 
-        ArrayList<DetectedActivity> detectedActivities = Utils.detectedActivitiesFromJson(
+        /*ArrayList<DetectedActivity> detectedActivities = Utils.detectedActivitiesFromJson(
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         Constants.KEY_DETECTED_ACTIVITIES, ""));
 
         // Bind the adapter to the ListView responsible for display data for detected activities.
         mAdapter = new DetectedActivitiesAdapter(this, detectedActivities);
-        detectedActivitiesListView.setAdapter(mAdapter);
+        detectedActivitiesListView.setAdapter(mAdapter);*/
 
         mActivityRecognitionClient = new ActivityRecognitionClient(this);
     }
 
-    @Override
+    /*@Override
     protected void onResume() {
         super.onResume();
         PreferenceManager.getDefaultSharedPreferences(this)
@@ -114,46 +102,75 @@ public class MainActivity extends AppCompatActivity
         PreferenceManager.getDefaultSharedPreferences(this)
                 .unregisterOnSharedPreferenceChangeListener(this);
         super.onPause();
-    }
+    }*/
 
     /**
      * Registers for activity recognition updates using
      * {@link ActivityRecognitionClient#requestActivityUpdates(long, PendingIntent)}.
      * Registers success and failure callbacks.
      */
-    @RequiresApi(api = Build.VERSION_CODES.Q)
     public void requestActivityUpdatesButtonHandler(View view) {
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED) {
-            // Permission is not granted
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, 200);
-        } else {
-            @SuppressLint("MissingPermission") Task<Void> task = mActivityRecognitionClient.removeActivityUpdates(
-                    getActivityDetectionPendingIntent());
-            task.addOnSuccessListener(new OnSuccessListener<Void>() {
-                @Override
-                public void onSuccess(Void result) {
-                    Toast.makeText(mContext,
-                            getString(R.string.activity_updates_removed),
-                            Toast.LENGTH_SHORT)
-                            .show();
-                    setUpdatesRequestedState(false);
-                    // Reset the display.
-                    mAdapter.updateActivities(new ArrayList<DetectedActivity>());
-                }
-            });
+        @SuppressLint("MissingPermission") Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
+                Constants.DETECTION_INTERVAL_IN_MILLISECONDS,
+                getActivityDetectionPendingIntent());
 
-            task.addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    Log.w(TAG, "Failed to enable activity recognition.");
-                    Toast.makeText(mContext, getString(R.string.activity_updates_not_removed),
-                            Toast.LENGTH_SHORT).show();
-                    setUpdatesRequestedState(true);
-                }
-            });
-        }
+        task.addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                Toast.makeText(mContext,
+                        getString(R.string.activity_updates_enabled),
+                        Toast.LENGTH_SHORT)
+                        .show();
+                setUpdatesRequestedState(true);
+                updateDetectedActivitiesList();
+            }
+        });
+
+        task.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.w(TAG, getString(R.string.activity_updates_not_enabled));
+                Toast.makeText(mContext,
+                        getString(R.string.activity_updates_not_enabled),
+                        Toast.LENGTH_SHORT)
+                        .show();
+                setUpdatesRequestedState(false);
+            }
+        });
     }
 
+
+    /**
+     * Removes activity recognition updates using
+     * {@link ActivityRecognitionClient#removeActivityUpdates(PendingIntent)}. Registers success and
+     * failure callbacks.
+     */
+    public void removeActivityUpdatesButtonHandler(View view) {
+        @SuppressLint("MissingPermission") Task<Void> task = mActivityRecognitionClient.removeActivityUpdates(
+                getActivityDetectionPendingIntent());
+        task.addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                Toast.makeText(mContext,
+                        getString(R.string.activity_updates_removed),
+                        Toast.LENGTH_SHORT)
+                        .show();
+                setUpdatesRequestedState(false);
+                // Reset the display.
+                mAdapter.updateActivities(new ArrayList<DetectedActivity>());
+            }
+        });
+
+        task.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.w(TAG, "Failed to enable activity recognition.");
+                Toast.makeText(mContext, getString(R.string.activity_updates_not_removed),
+                        Toast.LENGTH_SHORT).show();
+                setUpdatesRequestedState(true);
+            }
+        });
+    }
 
     /**
      * Gets a PendingIntent to be sent for each activity detection.
@@ -166,11 +183,11 @@ public class MainActivity extends AppCompatActivity
         return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    /**
+/*    *//**
      * Ensures that only one button is enabled at any time. The Request Activity Updates button is
      * enabled if the user hasn't yet requested activity updates. The Remove Activity Updates button
      * is enabled if the user has requested activity updates.
-     */
+     *//*
     private void setButtonsEnabledState() {
         if (getUpdatesRequestedState()) {
             mRequestActivityUpdatesButton.setEnabled(false);
@@ -179,7 +196,7 @@ public class MainActivity extends AppCompatActivity
             mRequestActivityUpdatesButton.setEnabled(true);
             mRemoveActivityUpdatesButton.setEnabled(false);
         }
-    }
+    }*/
 
     /**
      * Retrieves the boolean from SharedPreferences that tracks whether we are requesting activity
@@ -199,7 +216,7 @@ public class MainActivity extends AppCompatActivity
                 .edit()
                 .putBoolean(Constants.KEY_ACTIVITY_UPDATES_REQUESTED, requesting)
                 .apply();
-        setButtonsEnabledState();
+        /*setButtonsEnabledState();*/
     }
 
     /**

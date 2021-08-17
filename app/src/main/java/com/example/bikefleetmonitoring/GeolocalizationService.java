@@ -3,11 +3,16 @@ package com.example.bikefleetmonitoring;
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.IBinder;
 import android.os.Looper;
+import android.preference.PreferenceManager;
+import android.util.Log;
 import android.util.Pair;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -19,6 +24,8 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.location.ActivityRecognitionClient;
+import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -38,7 +45,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GeolocalizationService extends Service {
+public class GeolocalizationService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest locationRequest;
     String urlAggiungiPosizione = "http://" + Login.ip + ":3000/addPosizione";
@@ -49,6 +56,9 @@ public class GeolocalizationService extends Service {
     String nomeGeofence = "";
     ArrayList<String> listaGeofence = new ArrayList<>();
 
+    /* Activity Recognition */
+    private Context mContext;
+    private ActivityRecognitionClient mActivityRecognitionClient;
 
     /* All'interno troviamo "OnLocationResult()" il metodo più importante che viene chiamato ogni
      * volta che il sistema effettua una geolocalizzazione dell'utente. */
@@ -68,6 +78,8 @@ public class GeolocalizationService extends Service {
                 richiestaPostPosizioneUtente();
 
                 checkGeofenceIntersecata(lat, lng);
+
+                updateDetectedActivitiesList();
             }
         }
     };
@@ -123,7 +135,7 @@ public class GeolocalizationService extends Service {
                     try {
                         JSONArray arr = new JSONArray(response);
                         if (arr.length() > 0) {
-                            ArrayList<Integer> geofenceToNotify = checkGeofence2(arr);
+                            ArrayList<Integer> geofenceToNotify = checkGeofence(arr);
 
                             for (Integer n : geofenceToNotify) {
                                 String titoloGeofence = "";
@@ -151,8 +163,6 @@ public class GeolocalizationService extends Service {
                                         .setSmallIcon(R.mipmap.ic_bike)
                                         .setContentTitle(titoloGeofence)
                                         .setContentText(messageGeofence)
-                                        /*.setStyle(new NotificationCompat.BigTextStyle()
-                                                .bigText("Much longer text that cannot fit one line..."))*/
                                         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                                         // Set the intent that will fire when the user taps the notification
                                         .setContentIntent(pendingIntent)
@@ -179,30 +189,9 @@ public class GeolocalizationService extends Service {
         // Aggiungiamo la richiesta alla coda.
         queue.add(stringRequest);
     }
+    
 
-    private int checkGeofence(JSONArray arr) {
-        String name = null;
-        try {
-            name = arr.getJSONObject(0).getString("name");
-            if (name.equals(nomeGeofence)) {
-
-                if (arr.length() > 1) {
-
-                    return 1;
-
-                }
-                return -1;
-            } else {
-                return 0;
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        return -1;
-    }
-
-    private ArrayList<Integer> checkGeofence2(JSONArray arr) {
+    private ArrayList<Integer> checkGeofence(JSONArray arr) {
         String name = null;
         ArrayList<Integer> geoToPrint = new ArrayList<>();
         for (int i = 0; i < arr.length(); i++) {
@@ -221,10 +210,10 @@ public class GeolocalizationService extends Service {
         return geoToPrint;
     }
 
-    private void clearArrayGeofence(JSONArray arr){
+    private void clearArrayGeofence(JSONArray arr) {
         HashMap<String, Boolean> listageofenceAttuali = new HashMap<>();
 
-        for(String s : listaGeofence){
+        for (String s : listaGeofence) {
             listageofenceAttuali.put(s, false);
         }
 
@@ -237,14 +226,14 @@ public class GeolocalizationService extends Service {
                 e.printStackTrace();
             }
 
-            if(listaGeofence.contains(name)){
+            if (listaGeofence.contains(name)) {
                 listageofenceAttuali.replace(name, true);
             }
         }
 
 
-        for(String s: listageofenceAttuali.keySet()){
-            if(!listageofenceAttuali.get(s)){
+        for (String s : listageofenceAttuali.keySet()) {
+            if (!listageofenceAttuali.get(s)) {
                 listaGeofence.remove(s);
             }
         }
@@ -290,7 +279,8 @@ public class GeolocalizationService extends Service {
 
     @Override
     public void onCreate() {
-
+        mContext = this;
+        mActivityRecognitionClient = new ActivityRecognitionClient(this);
     }
 
     @Override
@@ -307,7 +297,7 @@ public class GeolocalizationService extends Service {
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         checkSettingsAndStartLocationUpdates();
-
+        startActivityRecognition();
         return START_STICKY;
     }
 
@@ -321,5 +311,118 @@ public class GeolocalizationService extends Service {
     public void onDestroy() {
         Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show();
         stopLocationUpdates();
+    }
+
+
+    /**
+     * Registers for activity recognition updates using
+     * {@link ActivityRecognitionClient#requestActivityUpdates(long, PendingIntent)}.
+     * Registers success and failure callbacks.
+     */
+    public void startActivityRecognition() {
+        @SuppressLint("MissingPermission") Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
+                Constants.DETECTION_INTERVAL_IN_MILLISECONDS,
+                getActivityDetectionPendingIntent());
+
+        task.addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                Toast.makeText(mContext,
+                        getString(R.string.activity_updates_enabled),
+                        Toast.LENGTH_SHORT)
+                        .show();
+                updateDetectedActivitiesList();
+            }
+        });
+
+        task.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(mContext,
+                        getString(R.string.activity_updates_not_enabled),
+                        Toast.LENGTH_SHORT)
+                        .show();
+            }
+        });
+    }
+
+    /**
+     * Gets a PendingIntent to be sent for each activity detection.
+     */
+    private PendingIntent getActivityDetectionPendingIntent() {
+        Intent intent = new Intent(this, DetectedActivitiesIntentService.class);
+
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
+        // requestActivityUpdates() and removeActivityUpdates().
+        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    /**
+     * Processes the list of freshly detected activities. Asks the adapter to update its list of
+     * DetectedActivities with new {@code DetectedActivity} objects reflecting the latest detected
+     * activities.
+     */
+    protected void updateDetectedActivitiesList() {
+        ArrayList<DetectedActivity> detectedActivities = Utils.detectedActivitiesFromJson(
+                PreferenceManager.getDefaultSharedPreferences(mContext)
+                        .getString(Constants.KEY_DETECTED_ACTIVITIES, ""));
+
+        HashMap<Integer, Integer> detectedActivitiesMap = new HashMap<>();
+        for (DetectedActivity activity : detectedActivities) {
+            detectedActivitiesMap.put(activity.getType(), activity.getConfidence());
+        }
+        // Every time we detect new activities, we want to reset the confidence level of ALL
+        // activities that we monitor. Since we cannot directly change the confidence
+        // of a DetectedActivity, we use a temporary list of DetectedActivity objects. If an
+        // activity was freshly detected, we use its confidence level. Otherwise, we set the
+        // confidence level to zero.
+        ArrayList<DetectedActivity> tempList = new ArrayList<>();
+        for (int i = 0; i < Constants.MONITORED_ACTIVITIES.length; i++) {
+            int confidence = detectedActivitiesMap.containsKey(Constants.MONITORED_ACTIVITIES[i]) ?
+                    detectedActivitiesMap.get(Constants.MONITORED_ACTIVITIES[i]) : 0;
+
+            tempList.add(new DetectedActivity(Constants.MONITORED_ACTIVITIES[i], confidence));
+        }
+
+        int activityType;
+        int prevActivityType = DetectedActivity.UNKNOWN;
+        int confidence;
+        int maxConfidence = 0;
+        for (DetectedActivity act : tempList) {
+            activityType = act.getType();
+            confidence = act.getConfidence();
+
+            if (confidence > maxConfidence) {
+                prevActivityType = activityType;
+                maxConfidence = confidence;
+            }
+        }
+        Toast.makeText(mContext, printMaxActivity(prevActivityType, maxConfidence), Toast.LENGTH_SHORT).show();
+
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
+        if (s.equals(Constants.KEY_DETECTED_ACTIVITIES)) {
+            updateDetectedActivitiesList();
+        }
+    }
+
+    private String printMaxActivity(int activity, int confidence) {
+        String stringaDaStampare = "";
+        switch (activity) {
+            case 1:
+                stringaDaStampare = "ON_BICYCLE";
+                break;
+            case 7:
+            case 8:
+                stringaDaStampare = "WALKING";
+                break;
+            default:
+                stringaDaStampare = "UNKNOWN";
+                break;
+        }
+
+        return "DetectedActivity [type=" + stringaDaStampare + ", confidence=" + confidence + "]";
     }
 }
