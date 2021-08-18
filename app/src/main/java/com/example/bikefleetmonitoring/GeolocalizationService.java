@@ -41,7 +41,9 @@ import com.google.android.gms.tasks.Task;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,11 +52,13 @@ public class GeolocalizationService extends Service implements SharedPreferences
     LocationRequest locationRequest;
     String urlAggiungiPosizione = "http://" + Login.ip + ":3000/addPosizione";
     String urlIntersezioneGeofence = "http://" + Login.ip + ":3000/intersezione_geofence";
-    public static ArrayList<Pair<Double, Double>> pairLatLngArr = new ArrayList<>();
+    public static ArrayList<Pair<Double, Double>> pairLatLngArr;
     String idBici;
     int idNotifica = 0;
     String nomeGeofence = "";
     ArrayList<String> listaGeofence = new ArrayList<>();
+    Timestamp time;
+
 
     /* Activity Recognition */
     private Context mContext;
@@ -72,14 +76,19 @@ public class GeolocalizationService extends Service implements SharedPreferences
                 double lat = location.getLatitude();
                 double lng = location.getLongitude();
 
+                //Prendiamo il tempo del momento in cui l'utente è stato geolocalizzato
+                time = new Timestamp((new Date()).getTime());
+
                 pairLatLngArr.add(new Pair<>(lng, lat));
 
                 //Dopo aver preso l'ultima posizione dell'utente chiediamo di aggiornare la posizione della bici sul db
                 richiestaPostPosizioneUtente();
 
-                checkGeofenceIntersecata(lat, lng);
+                //Controlliamo quale geofence interseca l'utente per l'invio della notifica
+                checkGeofenceIntersecata(lat, lng, time);
 
-                updateDetectedActivitiesList();
+                //Controlliamo se l'utente sta camminando o andando in bici
+                //updateDetectedActivitiesList();
             }
         }
     };
@@ -124,13 +133,13 @@ public class GeolocalizationService extends Service implements SharedPreferences
         queue.add(stringRequest);
     }
 
-    private void checkGeofenceIntersecata(double lat, double lng) {
-
+    private void checkGeofenceIntersecata(double lat, double lng, Timestamp prevTime) {
 
         RequestQueue queue = Volley.newRequestQueue(GeolocalizationService.this);
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, urlIntersezioneGeofence + "?lng=" + lng + "&lat=" + lat,
                 response -> {
+                    long differenceTime;
                     // Aggiungi codice da fare quando arriva la risposta dalla richiesta
                     try {
                         JSONArray arr = new JSONArray(response);
@@ -172,6 +181,12 @@ public class GeolocalizationService extends Service implements SharedPreferences
 
                                 // notificationId is a unique int for each notification that you must define
                                 notificationManager.notify(idNotifica, builder.build());
+
+                                // Calcolo ritardo notifica
+                                long finalTime = (new Date()).getTime();
+                                differenceTime = finalTime - prevTime.getTime();
+                                System.out.println(differenceTime + " millisecondi. Tempo iniziale: " + prevTime.getTime() + " Tempo finale: " + finalTime);
+
                                 idNotifica++;
                                 listaGeofence.add(nomeGeofence);
                             }
@@ -189,7 +204,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
         // Aggiungiamo la richiesta alla coda.
         queue.add(stringRequest);
     }
-    
 
     private ArrayList<Integer> checkGeofence(JSONArray arr) {
         String name = null;
@@ -288,7 +302,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
         Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show();
 
         idBici = intent.getStringExtra("id");
-
+        pairLatLngArr = new ArrayList<>();
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         locationRequest = LocationRequest.create();
@@ -297,7 +311,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         checkSettingsAndStartLocationUpdates();
-        startActivityRecognition();
+        //startActivityRecognition();
         return START_STICKY;
     }
 
@@ -312,7 +326,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
         Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show();
         stopLocationUpdates();
     }
-
 
     /**
      * Registers for activity recognition updates using
@@ -398,7 +411,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
             }
         }
         Toast.makeText(mContext, printMaxActivity(prevActivityType, maxConfidence), Toast.LENGTH_SHORT).show();
-
     }
 
     @Override
