@@ -197,6 +197,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                 params.put("di", btnGiornoDa.getText().toString() + " " + btnOraDa.getText().toString());
                 params.put("df", btnGiornoA.getText().toString() + " " + btnOraA.getText().toString());
                 params.put("bici", String.valueOf(idBici));
+                params.put("ras", String.valueOf(idRastrelliera));
 
                 return params;
             }
