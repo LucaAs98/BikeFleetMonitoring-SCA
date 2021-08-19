@@ -10,9 +10,7 @@ import android.location.Location;
 import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.util.Pair;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -40,6 +38,7 @@ import com.google.android.gms.tasks.Task;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -58,7 +57,8 @@ public class GeolocalizationService extends Service implements SharedPreferences
     String nomeGeofence = "";
     ArrayList<String> listaGeofence = new ArrayList<>();
     Timestamp time;
-
+    int lastActivityType = DetectedActivity.UNKNOWN;
+    boolean bikingWalking = false;
 
     /* Activity Recognition */
     private Context mContext;
@@ -84,11 +84,13 @@ public class GeolocalizationService extends Service implements SharedPreferences
                 //Dopo aver preso l'ultima posizione dell'utente chiediamo di aggiornare la posizione della bici sul db
                 richiestaPostPosizioneUtente();
 
+                //Controlliamo se l'utente sta camminando o andando in bici
+                updateDetectedActivitiesList();
+
                 //Controlliamo quale geofence interseca l'utente per l'invio della notifica
                 checkGeofenceIntersecata(lat, lng, time);
 
-                //Controlliamo se l'utente sta camminando o andando in bici
-                //updateDetectedActivitiesList();
+
             }
         }
     };
@@ -139,56 +141,22 @@ public class GeolocalizationService extends Service implements SharedPreferences
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, urlIntersezioneGeofence + "?lng=" + lng + "&lat=" + lat,
                 response -> {
-                    long differenceTime;
+
                     // Aggiungi codice da fare quando arriva la risposta dalla richiesta
                     try {
                         JSONArray arr = new JSONArray(response);
                         if (arr.length() > 0) {
-                            ArrayList<Integer> geofenceToNotify = checkGeofence(arr);
+                            ArrayList<Integer> geofenceToNotify = checkGeofence(arr, true);
 
                             for (Integer n : geofenceToNotify) {
-                                String titoloGeofence = "";
+                                sendNotification(arr.getJSONObject(n), prevTime);
+                            }
+                            if (bikingWalking) {
+                                 geofenceToNotify = checkGeofence(arr, false);
 
-                                nomeGeofence = arr.getJSONObject(n).getString("name");
-                                String messageGeofence = arr.getJSONObject(n).getString("message");
-                                boolean tipoArea = arr.getJSONObject(n).getBoolean("vietato");
-
-                                // Create an explicit intent for an Activity in your app
-                                Intent intent = new Intent(this, Home.class);
-                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-
-
-                                if (tipoArea) {
-                                    titoloGeofence = "Attenzione! Ingresso in area di geofence vietata!";
-                                } else {
-                                    titoloGeofence = "Attenzione! Ingresso in area di geofence PoI!";
+                                for (Integer n : geofenceToNotify) {
+                                    sendNotification(arr.getJSONObject(n), prevTime);
                                 }
-
-                                if (messageGeofence.equals("null")) {
-                                    messageGeofence = "Ingresso nell'area: " + nomeGeofence;
-                                }
-                                NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "BikeFleetMonitoring")
-                                        .setSmallIcon(R.mipmap.ic_bike)
-                                        .setContentTitle(titoloGeofence)
-                                        .setContentText(messageGeofence)
-                                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                                        // Set the intent that will fire when the user taps the notification
-                                        .setContentIntent(pendingIntent)
-                                        .setAutoCancel(true);
-
-                                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-
-                                // notificationId is a unique int for each notification that you must define
-                                notificationManager.notify(idNotifica, builder.build());
-
-                                // Calcolo ritardo notifica
-                                long finalTime = (new Date()).getTime();
-                                differenceTime = finalTime - prevTime.getTime();
-                                System.out.println(differenceTime + " millisecondi. Tempo iniziale: " + prevTime.getTime() + " Tempo finale: " + finalTime);
-
-                                idNotifica++;
-                                listaGeofence.add(nomeGeofence);
                             }
                         } else {
                             listaGeofence.clear();
@@ -205,13 +173,60 @@ public class GeolocalizationService extends Service implements SharedPreferences
         queue.add(stringRequest);
     }
 
-    private ArrayList<Integer> checkGeofence(JSONArray arr) {
+
+    private void sendNotification(JSONObject obj, Timestamp prevTime) throws JSONException {
+        long differenceTime;
+        String titoloGeofence = "";
+
+        nomeGeofence = obj.getString("name");
+        String messageGeofence = obj.getString("message");
+        boolean tipoArea = obj.getBoolean("vietato");
+
+        // Create an explicit intent for an Activity in your app
+        Intent intent = new Intent(this, Home.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+
+
+        if (tipoArea) {
+            titoloGeofence = "Attenzione! Ingresso in area di geofence vietata!";
+        } else {
+            titoloGeofence = "Attenzione! Ingresso in area di geofence PoI!";
+        }
+
+        if (messageGeofence.equals("null")) {
+            messageGeofence = "Ingresso nell'area: " + nomeGeofence;
+        }
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "BikeFleetMonitoring")
+                .setSmallIcon(R.mipmap.ic_bike)
+                .setContentTitle(titoloGeofence)
+                .setContentText(messageGeofence)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                // Set the intent that will fire when the user taps the notification
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+        // notificationId is a unique int for each notification that you must define
+        notificationManager.notify(idNotifica, builder.build());
+
+        // Calcolo ritardo notifica
+        long finalTime = (new Date()).getTime();
+        differenceTime = finalTime - prevTime.getTime();
+        System.out.println(differenceTime + " millisecondi. Tempo iniziale: " + prevTime.getTime() + " Tempo finale: " + finalTime);
+
+        idNotifica++;
+        listaGeofence.add(nomeGeofence);
+    }
+
+    private ArrayList<Integer> checkGeofence(JSONArray arr, boolean vietato) {
         String name = null;
         ArrayList<Integer> geoToPrint = new ArrayList<>();
         for (int i = 0; i < arr.length(); i++) {
             try {
                 name = arr.getJSONObject(i).getString("name");
-                if (!listaGeofence.contains(name)) {
+                if (!listaGeofence.contains(name) && arr.getJSONObject(i).getBoolean("vietato") == vietato) {
                     geoToPrint.add(i);
                 }
             } catch (JSONException e) {
@@ -410,7 +425,9 @@ public class GeolocalizationService extends Service implements SharedPreferences
                 maxConfidence = confidence;
             }
         }
-        Toast.makeText(mContext, printMaxActivity(prevActivityType, maxConfidence), Toast.LENGTH_SHORT).show();
+        bikingWalking = lastActivityType == DetectedActivity.ON_BICYCLE && prevActivityType == DetectedActivity.WALKING;
+        lastActivityType = prevActivityType;
+        //Toast.makeText(mContext, printMaxActivity(prevActivityType, maxConfidence), Toast.LENGTH_SHORT).show();
     }
 
     @Override
