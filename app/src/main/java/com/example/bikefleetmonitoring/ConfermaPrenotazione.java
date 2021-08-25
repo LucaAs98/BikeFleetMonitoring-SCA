@@ -90,7 +90,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
             }
         });
 
-        btnGiornoA.setOnClickListener(new View.OnClickListener() {
+       /* btnGiornoA.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 editTextCliccato = btnGiornoA;
@@ -115,7 +115,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                 }, hour, minute, true);//Yes 24 hour time
                 mTimePicker.show();
             }
-        });
+        });*/
 
 
         //Settiamo cosa fare quando si clicca sul bottone per prenotare
@@ -128,20 +128,20 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                     return;
                 }
 
-                if (TextUtils.isEmpty(btnGiornoA.getText().toString())) {
+                /*if (TextUtils.isEmpty(btnGiornoA.getText().toString())) {
                     btnGiornoA.setError("Il campo 'Giorno fine' è richiesto.");
                     return;
-                }
+                }*/
 
                 if (TextUtils.isEmpty(btnOraDa.getText().toString())) {
                     btnOraDa.setError("Il campo 'Ora inizio' è richiesto.");
                     return;
                 }
 
-                if (TextUtils.isEmpty(btnOraA.getText().toString())) {
+                /*if (TextUtils.isEmpty(btnOraA.getText().toString())) {
                     btnOraA.setError("Il campo 'Ora fine' è richiesto.");
                     return;
-                }
+                }*/
 
                 //Se tutti i campi sono stati compilati allora facciamo la richiesta di prenotazione
                 richiestaPostPrenotazione();
@@ -195,7 +195,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                 params.put("cod", cod);
                 params.put("utente", Home.session);
                 params.put("di", btnGiornoDa.getText().toString() + " " + btnOraDa.getText().toString());
-                params.put("df", btnGiornoA.getText().toString() + " " + btnOraA.getText().toString());
+                //params.put("df", btnGiornoA.getText().toString() + " " + btnOraA.getText().toString());
                 params.put("bici", String.valueOf(idBici));
                 params.put("ras", String.valueOf(idRastrelliera));
 
@@ -222,8 +222,8 @@ public class ConfermaPrenotazione extends AppCompatActivity {
     private void trovaElementiXML() {
         btnGiornoDa = findViewById(R.id.btnGiornoDa);
         btnOraDa = findViewById(R.id.btnOraDa);
-        btnGiornoA = findViewById(R.id.btnGiornoA);
-        btnOraA = findViewById(R.id.btnOraA);
+        //btnGiornoA = findViewById(R.id.btnGiornoA);
+        //btnOraA = findViewById(R.id.btnOraA);
         toolbar = findViewById(R.id.toolbar);
         btnConfermaPrenot = findViewById(R.id.btnConfermaPrenot);
     }

@@ -32,7 +32,7 @@ public class Registrazione extends AppCompatActivity {
     TextView tvVaiALogin;
     EditText etUsername, etPassword;
     String url = "http://" + Login.ip + ":3000/users";
-    String url1 = "http://" + Login.ip + "/registrazione";
+    String url1 = "http://" + Login.ip + ":3000/registrazione";
     HashMap<String, String> hashMapUsers = new HashMap<>();
 
 

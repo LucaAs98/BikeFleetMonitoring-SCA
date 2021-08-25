@@ -24,6 +24,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +37,8 @@ public class Home extends AppCompatActivity {
     Toolbar toolbar;
     boolean prenotato, noleggioIniziato;
     int idRastrellieraVicino;
+    private static final SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 
     String urlTerminaNoleggio = "http://" + Login.ip + ":3000/termina_noleggio";
     String urlGetCodPren = "http://" + Login.ip + ":3000/vis_pren";
@@ -250,6 +255,10 @@ public class Home extends AppCompatActivity {
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
 
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                String df =  sdf3.format(timestamp);
+
+
                 /* Modifichiamo l'array delle coppie latitudine e longitudine in modo tale da avere
                  * una stringa formattata in un formato compatibile con ST_GeomFromGeoJSON*/
                 String JSONgeom = String.valueOf(GeolocalizationService.pairLatLngArr).replaceAll("Pair", "");
@@ -262,6 +271,7 @@ public class Home extends AppCompatActivity {
                 params.put("codNoleggio", codP);
                 params.put("geom", JSONgeom);
                 params.put("bici", idBici);
+                params.put("df", df);
                 params.put("rastrelliera", String.valueOf(idRastrellieraVicino));
                 return params;
             }

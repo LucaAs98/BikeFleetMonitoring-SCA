@@ -115,7 +115,7 @@
     </LinearLayout>
 
 
-    <TextView
+    <!-- <TextView
         android:id="@+id/tvMessaggioA"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -194,7 +194,7 @@
             android:hint="Ora....."
             android:inputType="date"
             android:textSize="16sp" />
-    </LinearLayout>
+    </LinearLayout> -->
 
 
     <androidx.appcompat.widget.AppCompatButton
@@ -211,6 +211,6 @@
         android:textSize="16sp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutOraA" />
+        app:layout_constraintTop_toBottomOf="@id/layoutOraDa" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
