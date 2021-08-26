@@ -1,33 +1,47 @@
 package com.example.bikefleetmonitoring;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class Home extends AppCompatActivity {
@@ -47,7 +61,8 @@ public class Home extends AppCompatActivity {
 
 
     /**** Prendi la posizione reale!!!!!!!!!!!!  ***/
-    double longUtente = 11.344264, latUtente = 44.48761;
+    FusedLocationProviderClient fusedLocationProviderClient;
+    double longUtente, latUtente;
 
 
     @Override
@@ -58,7 +73,7 @@ public class Home extends AppCompatActivity {
         trovaElementiXML();
         inizializzaToolbar();
         createNotificationChannel();
-
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         noleggioIniziato = false;
 
         /* Se premiamo il pulsante di Logout andiamo al login e togliamo l'istanza all'utente. */
@@ -126,11 +141,13 @@ public class Home extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (noleggioIniziato) {
-                    //Mettiamo nell'url la latitudine e la longitudine della posizione dell'utente.
-                    urlRastrellieraVicino = urlRastrellieraVicino + "?lng=" + longUtente + "&lat=" + latUtente;
+
+
+
                     /* Controlliamo che l'utente si trovi vicino ad una rastrelliera. Successivamente
                     facciamo terminare il noleggio */
-                    richiestaGetRastrellieraVicino();
+                    getUserPosition();
+
                 } else {
                     //Se non è iniziato il noleggio, vogliamo farlo iniziare inserendo il codice di noleggio.
                     Intent intent = new Intent(Home.this, IniziaNoleggio.class);
@@ -195,9 +212,10 @@ public class Home extends AppCompatActivity {
     private void richiestaGetRastrellieraVicino() {
         //Istanzia la coda di richieste
         RequestQueue queue = Volley.newRequestQueue(Home.this);
+        //Mettiamo nell'url la latitudine e la longitudine della posizione dell'utente.
 
         // Stringa per fare la richiesta. Nel caso della rastrelliera vicino facciamo una richiesta GET all'url "http://192.168.1.122:3000/checkDistance"
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlRastrellieraVicino,
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlRastrellieraVicino + "?lng=" + longUtente + "&lat=" + latUtente,
                 response -> {
                     JSONArray arrRastr = null;
                     // Aggiungi codice da fare quando arriva la risposta dalla richiesta
@@ -318,5 +336,37 @@ public class Home extends AppCompatActivity {
         // or other notification behaviors after this
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.createNotificationChannel(channel);
+    }
+
+    /* Prendiamo la posizione dell'utente per verificare che si trovi vicino ad una rastrelliera. */
+    @SuppressLint("MissingPermission")
+    private void getUserPosition() {
+        if (ActivityCompat.checkSelfPermission(Home.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            //Se abbiamo i permessi, prendiamo la posizione
+            fusedLocationProviderClient.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
+                @Override
+                public void onComplete(@NonNull Task<Location> task) {
+                    //Inizializziamo la posizione
+                    Location location = task.getResult();
+                    if (location != null) {
+                        //Inizializziamo geoCoder
+                        Geocoder geocoder = new Geocoder(Home.this, Locale.getDefault());
+
+                        //Inizializziamo la lista degli indirizzi
+                        try {
+                            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+
+                            latUtente = addresses.get(0).getLatitude();
+                            longUtente = addresses.get(0).getLongitude();
+                            richiestaGetRastrellieraVicino();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+        } else {
+            ActivityCompat.requestPermissions(Home.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 44);
+        }
     }
 }

@@ -80,8 +80,7 @@ public class IniziaNoleggio extends AppCompatActivity {
                     /* Se il codice corrisponde dobbiamo controllare che l'utente si trovi in prossimità
                      * della rastrelliera dov'è situata la bici prenotata. Successivamente facciamo la richiesta
                      * di noleggio. */
-                    //getUserPosition();
-                    richiestaGetRastrellieraVicino();
+                    getUserPosition();
                 }
             }
         });
@@ -105,8 +104,8 @@ public class IniziaNoleggio extends AppCompatActivity {
                         try {
                             List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
 
-                            /*latUtente = addresses.get(0).getLatitude();
-                            longUtente = addresses.get(0).getLongitude();*/
+                            latUtente = addresses.get(0).getLatitude();
+                            longUtente = addresses.get(0).getLongitude();
 
                             richiestaGetRastrellieraVicino();
                         } catch (IOException e) {
