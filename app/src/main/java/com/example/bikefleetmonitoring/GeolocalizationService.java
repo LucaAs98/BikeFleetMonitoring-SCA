@@ -10,6 +10,7 @@ import android.location.Location;
 import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.util.Pair;
 import android.widget.Toast;
 
@@ -40,6 +41,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -59,6 +65,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
     Timestamp time;
     int lastActivityType = DetectedActivity.UNKNOWN;
     boolean bikingWalking = false;
+    String fileScritturaLettura = "notification_delay.txt";   // File all'interno della quale andremo a scrivere tutti i delay delle notifiche
 
     /* Activity Recognition */
     private Context mContext;
@@ -152,7 +159,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
                                 sendNotification(arr.getJSONObject(n), prevTime);
                             }
                             if (bikingWalking) {
-                                 geofenceToNotify = checkGeofence(arr, false);
+                                geofenceToNotify = checkGeofence(arr, false);
 
                                 for (Integer n : geofenceToNotify) {
                                     sendNotification(arr.getJSONObject(n), prevTime);
@@ -215,9 +222,10 @@ public class GeolocalizationService extends Service implements SharedPreferences
         long finalTime = (new Date()).getTime();
         differenceTime = finalTime - prevTime.getTime();
         System.out.println(differenceTime + " millisecondi. Tempo iniziale: " + prevTime.getTime() + " Tempo finale: " + finalTime);
-
+        writeFileOnInternalStorage("Delay: " + (finalTime - prevTime.getTime()));
         idNotifica++;
         listaGeofence.add(nomeGeofence);
+        readFileFromInternalStorage();
     }
 
     private ArrayList<Integer> checkGeofence(JSONArray arr, boolean vietato) {
@@ -268,6 +276,37 @@ public class GeolocalizationService extends Service implements SharedPreferences
         }
     }
 
+    /* Metodo per leggere dal file, utilizzato per vedere se i dati vengono scritti correttamente. Non sarà utile
+     *  implementarlo nella versione definitiva. Guarda però al suo interno perchè c'è scritto come formattare la
+     *  stringa prima di trasformarla in JSON corretto. */
+    public void readFileFromInternalStorage() {
+        try {
+            FileInputStream fileInputStream = openFileInput(fileScritturaLettura);
+            InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
+
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+            StringBuilder stringBuffer = new StringBuilder();
+            String lines;
+            while ((lines = bufferedReader.readLine()) != null) {
+                stringBuffer.append(lines).append("\n");
+            }
+            Log.d("AAAAAAAAAAAAAAAAAA ----------->", stringBuffer.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /* Metodo utile alla scrittura su file situato in memoria interna del telefono. Ogni volta che viene richiamato
+     *  appende al contenuto già presente nel file. */
+    public void writeFileOnInternalStorage(String message) {
+        try {
+            FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_APPEND);      //Scrive in modo tale da appendere a ciò che è stato già scritto (MODE_APPEND)
+            fileOutputStream.write(message.getBytes());     //Scrittura vera e propria
+            fileOutputStream.close();                       //Chiusura del file
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /* Metodi da non toccare, utili per la geolocalizzazione continua. */
     private void checkSettingsAndStartLocationUpdates() {
