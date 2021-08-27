@@ -10,7 +10,6 @@ import android.location.Location;
 import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.util.Pair;
 import android.widget.Toast;
 
@@ -18,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
@@ -41,11 +41,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -57,6 +52,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
     LocationRequest locationRequest;
     String urlAggiungiPosizione = "http://" + Login.ip + ":3000/addPosizione";
     String urlIntersezioneGeofence = "http://" + Login.ip + ":3000/intersezione_geofence";
+    String urlInsertDelay = "http://" + Login.ip + ":3000/insert_delay";
     public static ArrayList<Pair<Double, Double>> pairLatLngArr;
     String idBici;
     int idNotifica = 0;
@@ -96,7 +92,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
 
                 //Controlliamo quale geofence interseca l'utente per l'invio della notifica
                 checkGeofenceIntersecata(lat, lng, time);
-
 
             }
         }
@@ -158,6 +153,8 @@ public class GeolocalizationService extends Service implements SharedPreferences
                             for (Integer n : geofenceToNotify) {
                                 sendNotification(arr.getJSONObject(n), prevTime);
                             }
+                            System.out.println(printMaxActivity(lastActivityType, 0));
+
                             if (bikingWalking) {
                                 geofenceToNotify = checkGeofence(arr, false);
 
@@ -222,12 +219,31 @@ public class GeolocalizationService extends Service implements SharedPreferences
         long finalTime = (new Date()).getTime();
         differenceTime = finalTime - prevTime.getTime();
         System.out.println(differenceTime + " millisecondi. Tempo iniziale: " + prevTime.getTime() + " Tempo finale: " + finalTime);
-        writeFileOnInternalStorage("Delay: " + (finalTime - prevTime.getTime()));
+        sendDelay(differenceTime);
         idNotifica++;
         listaGeofence.add(nomeGeofence);
-        readFileFromInternalStorage();
-    }
 
+    }
+    private void sendDelay(long delay) {
+
+        RequestQueue queue = Volley.newRequestQueue(GeolocalizationService.this);
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlInsertDelay + "?delay=" + delay + "&user=" + "Mauro",
+                response -> {
+                },
+                error -> {
+                    // Aggiungi codice da fare se la richiesta non è andata a buon fine
+                });
+
+        // Aggiungiamo la richiesta alla coda.
+
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
+                0,
+                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+        queue.add(stringRequest);
+    }
     private ArrayList<Integer> checkGeofence(JSONArray arr, boolean vietato) {
         String name = null;
         ArrayList<Integer> geoToPrint = new ArrayList<>();
@@ -273,38 +289,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
             if (!listageofenceAttuali.get(s)) {
                 listaGeofence.remove(s);
             }
-        }
-    }
-
-    /* Metodo per leggere dal file, utilizzato per vedere se i dati vengono scritti correttamente. Non sarà utile
-     *  implementarlo nella versione definitiva. Guarda però al suo interno perchè c'è scritto come formattare la
-     *  stringa prima di trasformarla in JSON corretto. */
-    public void readFileFromInternalStorage() {
-        try {
-            FileInputStream fileInputStream = openFileInput(fileScritturaLettura);
-            InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
-
-            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-            StringBuilder stringBuffer = new StringBuilder();
-            String lines;
-            while ((lines = bufferedReader.readLine()) != null) {
-                stringBuffer.append(lines).append("\n");
-            }
-            Log.d("AAAAAAAAAAAAAAAAAA ----------->", stringBuffer.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /* Metodo utile alla scrittura su file situato in memoria interna del telefono. Ogni volta che viene richiamato
-     *  appende al contenuto già presente nel file. */
-    public void writeFileOnInternalStorage(String message) {
-        try {
-            FileOutputStream fileOutputStream = openFileOutput(fileScritturaLettura, MODE_APPEND);      //Scrive in modo tale da appendere a ciò che è stato già scritto (MODE_APPEND)
-            fileOutputStream.write(message.getBytes());     //Scrittura vera e propria
-            fileOutputStream.close();                       //Chiusura del file
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -464,9 +448,11 @@ public class GeolocalizationService extends Service implements SharedPreferences
                 maxConfidence = confidence;
             }
         }
-        bikingWalking = lastActivityType == DetectedActivity.ON_BICYCLE && prevActivityType == DetectedActivity.WALKING;
+
+        bikingWalking = lastActivityType == DetectedActivity.STILL && prevActivityType == DetectedActivity.WALKING;
         lastActivityType = prevActivityType;
-        //Toast.makeText(mContext, printMaxActivity(prevActivityType, maxConfidence), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, printMaxActivity(prevActivityType,0) + bikingWalking , Toast.LENGTH_SHORT).show();
+
     }
 
     @Override
@@ -479,8 +465,8 @@ public class GeolocalizationService extends Service implements SharedPreferences
     private String printMaxActivity(int activity, int confidence) {
         String stringaDaStampare = "";
         switch (activity) {
-            case 1:
-                stringaDaStampare = "ON_BICYCLE";
+            case 3:
+                stringaDaStampare = "STILL";
                 break;
             case 7:
             case 8:

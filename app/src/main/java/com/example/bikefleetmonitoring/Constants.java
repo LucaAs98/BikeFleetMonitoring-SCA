@@ -16,15 +16,7 @@
 
 package com.example.bikefleetmonitoring;
 
-import android.content.Context;
-import android.content.res.Resources;
-
 import com.google.android.gms.location.DetectedActivity;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import java.lang.reflect.Type;
-import java.util.ArrayList;
 
 /**
  * Constants used in this sample.
@@ -52,7 +44,7 @@ final class Constants {
      */
     static final int[] MONITORED_ACTIVITIES = {
             DetectedActivity.WALKING,
-            DetectedActivity.ON_BICYCLE,
+            DetectedActivity.STILL,
             DetectedActivity.UNKNOWN
     };
 }
