@@ -44,7 +44,7 @@ final class Constants {
      */
     static final int[] MONITORED_ACTIVITIES = {
             DetectedActivity.WALKING,
-            DetectedActivity.STILL,
+            DetectedActivity.ON_BICYCLE,
             DetectedActivity.UNKNOWN
     };
 }

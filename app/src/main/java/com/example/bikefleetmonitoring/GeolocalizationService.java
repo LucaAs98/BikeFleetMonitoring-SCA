@@ -153,7 +153,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
                             for (Integer n : geofenceToNotify) {
                                 sendNotification(arr.getJSONObject(n), prevTime);
                             }
-                            System.out.println(printMaxActivity(lastActivityType, 0));
 
                             if (bikingWalking) {
                                 geofenceToNotify = checkGeofence(arr, false);
@@ -349,7 +348,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         checkSettingsAndStartLocationUpdates();
-        //startActivityRecognition();
+        startActivityRecognition();
         return START_STICKY;
     }
 
@@ -436,7 +435,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
         }
 
         int activityType;
-        int prevActivityType = DetectedActivity.UNKNOWN;
+        int succActivityType = DetectedActivity.UNKNOWN;
         int confidence;
         int maxConfidence = 0;
         for (DetectedActivity act : tempList) {
@@ -444,14 +443,15 @@ public class GeolocalizationService extends Service implements SharedPreferences
             confidence = act.getConfidence();
 
             if (confidence > maxConfidence) {
-                prevActivityType = activityType;
+                succActivityType = activityType;
                 maxConfidence = confidence;
             }
         }
+        if(!(succActivityType == DetectedActivity.UNKNOWN)){
+            bikingWalking = lastActivityType == DetectedActivity.ON_BICYCLE && succActivityType == DetectedActivity.WALKING;
+            lastActivityType = succActivityType;
+        }
 
-        bikingWalking = lastActivityType == DetectedActivity.STILL && prevActivityType == DetectedActivity.WALKING;
-        lastActivityType = prevActivityType;
-        Toast.makeText(this, printMaxActivity(prevActivityType,0) + bikingWalking , Toast.LENGTH_SHORT).show();
 
     }
 
@@ -466,7 +466,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
         String stringaDaStampare = "";
         switch (activity) {
             case 3:
-                stringaDaStampare = "STILL";
+                stringaDaStampare = "ON_BICYCLE";
                 break;
             case 7:
             case 8:
