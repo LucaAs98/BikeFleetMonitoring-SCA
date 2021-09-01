@@ -61,7 +61,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
     Timestamp time;
     int lastActivityType = DetectedActivity.UNKNOWN;
     boolean bikingWalking = false;
-    String fileScritturaLettura = "notification_delay.txt";   // File all'interno della quale andremo a scrivere tutti i delay delle notifiche
 
     /* Activity Recognition */
     private Context mContext;
@@ -227,7 +226,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
 
         RequestQueue queue = Volley.newRequestQueue(GeolocalizationService.this);
 
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlInsertDelay + "?delay=" + delay + "&user=" + "Mauro",
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlInsertDelay + "?delay=" + delay + "&user=" + "Luca",
                 response -> {
                 },
                 error -> {

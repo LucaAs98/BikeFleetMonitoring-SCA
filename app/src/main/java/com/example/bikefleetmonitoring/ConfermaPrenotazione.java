@@ -23,6 +23,7 @@ import com.android.volley.toolbox.Volley;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -67,9 +68,15 @@ public class ConfermaPrenotazione extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 editTextCliccato = btnGiornoDa;
-                new DatePickerDialog(ConfermaPrenotazione.this, date, myCalendar
-                        .get(Calendar.YEAR), myCalendar.get(Calendar.MONTH),
-                        myCalendar.get(Calendar.DAY_OF_MONTH)).show();
+
+                final DatePickerDialog datePickerDialog = new DatePickerDialog(
+                        ConfermaPrenotazione.this, date,
+                        myCalendar
+                                .get(Calendar.YEAR), myCalendar.get(Calendar.MONTH), myCalendar.get(Calendar.DAY_OF_MONTH));
+                DatePicker datePicker = datePickerDialog.getDatePicker();
+                datePicker.setMaxDate(new Date().getTime() + 604800000);
+                datePicker.setMinDate(new Date().getTime());
+                datePickerDialog.show();
             }
         });
 
