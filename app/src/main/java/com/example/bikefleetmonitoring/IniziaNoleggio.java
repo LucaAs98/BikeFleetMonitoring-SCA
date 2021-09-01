@@ -33,10 +33,16 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 public class IniziaNoleggio extends AppCompatActivity {
     Toolbar toolbar;
@@ -167,7 +173,7 @@ public class IniziaNoleggio extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(IniziaNoleggio.this);
 
         // Stringa per fare la richiesta. Nel caso di ritrovare la rastrelliera dove si trova una bici facciamo una richiesta GET all'url "http://192.168.1.122:3000/rastrelliera_corrispondente"
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlRastrCorrisp,
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlRastrCorrisp + "&codP=" + codP,
                 response -> {// Aggiungi codice da fare quando arriva la risposta dalla richiesta
                     JSONArray arrRastr;
 
@@ -176,20 +182,45 @@ public class IniziaNoleggio extends AppCompatActivity {
 
                         if (arrRastr.length() > 0) {
                             JSONObject rastrelliera = arrRastr.getJSONObject(0);
+                            @SuppressLint("SimpleDateFormat")
+                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
                             idRastrellieraBici = rastrelliera.getString("rastrelliera");
+                            String diS = rastrelliera.getString("data_inizio");
+
+                            diS = diS.replace('T', ' ');
+                            diS = diS.substring(0, diS.length() - 5);
+                            //System.out.println(diS);
+                            Date di = format.parse(diS);
+                            di.setTime(di.getTime() + TimeUnit.HOURS.toMillis(2));
+
+                            Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
+                            //getTime() returns the current date in default time zone
+                            Date dataAttuale = calendar.getTime();
+
+                            //assert di != null;
+                            //System.out.println(di.toString());
+                            //System.out.println(dataAttuale.toString());
 
                             //Se la rastrelliera è la stessa vicino all'utente
                             if (idRastrellieraBici.equals(idRastrellieraVicino)) {
-                                //Facciamo la richiesta di attivazione del noleggio
-                                richiestaPostNoleggio();
 
-                                //Facciamo partire la geolocalizzazione in background
-                                Intent intent = new Intent(IniziaNoleggio.this, GeolocalizationService.class);
-                                intent.putExtra("id", idBici);
-                                startService(intent);
+                                if (di.before(dataAttuale)) {
 
-                                //Andiamo alla home
-                                vaiAHome();
+                                    //Facciamo la richiesta di attivazione del noleggio
+                                    richiestaPostNoleggio();
+
+                                    //Facciamo partire la geolocalizzazione in background
+                                    Intent intent = new Intent(IniziaNoleggio.this, GeolocalizationService.class);
+                                    intent.putExtra("id", idBici);
+                                    startService(intent);
+
+                                    //Andiamo alla home
+                                    vaiAHome();
+                                } else {
+                                    //La rastrelliera è lontana rispetto alla posizione dell'utente
+                                    Toast.makeText(IniziaNoleggio.this, "Non è possibile sbloccare la bici, prenotazione avvenuta per una data successiva!", Toast.LENGTH_SHORT).show();
+                                }
                             } else {
                                 //La rastrelliera è lontana rispetto alla posizione dell'utente
                                 Toast.makeText(IniziaNoleggio.this, "Non sei vicino alla rastrelliera dove si trova la bici che vuoi noleggiare!", Toast.LENGTH_SHORT).show();
@@ -197,7 +228,7 @@ public class IniziaNoleggio extends AppCompatActivity {
                         } else {
                             Toast.makeText(IniziaNoleggio.this, "Non sei abbastanza vicino ad una rastrelliera!", Toast.LENGTH_SHORT).show();
                         }
-                    } catch (JSONException e) {
+                    } catch (JSONException | ParseException e) {
                         e.printStackTrace();
                     }
                 },
