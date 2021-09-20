@@ -136,23 +136,34 @@ public class GeolocalizationService extends Service implements SharedPreferences
         queue.add(stringRequest);
     }
 
+    /* Attraverso la chiamata di checkGeofence, viene controllato se l'utente transita in qualche
+    geofence. Queste geofence vengono considerate ssolamente se l'utente viene rilevato per la prima volta
+     all'interno dell'area. Inoltre, per quanto riguarda quelle poi, si cotrolla che ci sia stata la
+     transizione da biking a walking
+    *  */
     private void checkGeofenceIntersecata(double lat, double lng, Timestamp prevTime) {
 
         RequestQueue queue = Volley.newRequestQueue(GeolocalizationService.this);
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, urlIntersezioneGeofence + "?lng=" + lng + "&lat=" + lat,
                 response -> {
-
-                    // Aggiungi codice da fare quando arriva la risposta dalla richiesta
                     try {
+                        //Array con le geofecne intersecate
                         JSONArray arr = new JSONArray(response);
+
+                        //Entra solamente se sono presente delle geofence intersecate
                         if (arr.length() > 0) {
+
+                            //Calcolo delle geofence vietate da notificare
                             ArrayList<Integer> geofenceToNotify = checkGeofence(arr, true);
 
+                            //invio notifiche
                             for (Integer n : geofenceToNotify) {
                                 sendNotification(arr.getJSONObject(n), prevTime);
                             }
 
+                            //Controllo della transizione, se è avvenuta si effettuano le stesse
+                            // operazioni precedenti, ma per le geofence POI
                             if (bikingWalking) {
                                 geofenceToNotify = checkGeofence(arr, false);
 
@@ -175,7 +186,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
         queue.add(stringRequest);
     }
 
-
+    //Invio della notifica
     private void sendNotification(JSONObject obj, Timestamp prevTime) throws JSONException {
         long differenceTime;
         String titoloGeofence = "";
@@ -184,7 +195,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
         String messageGeofence = obj.getString("message");
         boolean tipoArea = obj.getBoolean("vietato");
 
-        // Create an explicit intent for an Activity in your app
         Intent intent = new Intent(this, Home.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
@@ -204,13 +214,10 @@ public class GeolocalizationService extends Service implements SharedPreferences
                 .setContentTitle(titoloGeofence)
                 .setContentText(messageGeofence)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                // Set the intent that will fire when the user taps the notification
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-
-        // notificationId is a unique int for each notification that you must define
         notificationManager.notify(idNotifica, builder.build());
 
         // Calcolo ritardo notifica
@@ -222,6 +229,8 @@ public class GeolocalizationService extends Service implements SharedPreferences
         listaGeofence.add(nomeGeofence);
 
     }
+
+    //Richiesta per inviare al database il delay della notifica
     private void sendDelay(long delay) {
 
         RequestQueue queue = Volley.newRequestQueue(GeolocalizationService.this);
@@ -234,7 +243,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
                 });
 
         // Aggiungiamo la richiesta alla coda.
-
         stringRequest.setRetryPolicy(new DefaultRetryPolicy(
                 0,
                 DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
@@ -242,6 +250,8 @@ public class GeolocalizationService extends Service implements SharedPreferences
 
         queue.add(stringRequest);
     }
+
+    //Controlla se le geofence in cui risiede l'utente è già stata notificata
     private ArrayList<Integer> checkGeofence(JSONArray arr, boolean vietato) {
         String name = null;
         ArrayList<Integer> geoToPrint = new ArrayList<>();
@@ -261,13 +271,14 @@ public class GeolocalizationService extends Service implements SharedPreferences
         return geoToPrint;
     }
 
+    // Pulizia dell'array in cui sono salvati i nomi delle geofence in cui l'utente era presente
+    // all'ultima posizione rilevata
     private void clearArrayGeofence(JSONArray arr) {
         HashMap<String, Boolean> listageofenceAttuali = new HashMap<>();
 
         for (String s : listaGeofence) {
             listageofenceAttuali.put(s, false);
         }
-
 
         for (int i = 0; i < arr.length(); i++) {
             String name = null;
@@ -282,7 +293,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
             }
         }
 
-
         for (String s : listageofenceAttuali.keySet()) {
             if (!listageofenceAttuali.get(s)) {
                 listaGeofence.remove(s);
@@ -290,7 +300,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
         }
     }
 
-    /* Metodi da non toccare, utili per la geolocalizzazione continua. */
+    /* Metodi per la geolocalizzazione continua. */
     private void checkSettingsAndStartLocationUpdates() {
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
         SettingsClient client = LocationServices.getSettingsClient(this);
@@ -318,6 +328,7 @@ public class GeolocalizationService extends Service implements SharedPreferences
         });
     }
 
+    //Metodi vari per il funzionamento del servizio
     @SuppressLint("MissingPermission")
     private void startLocationUpdates() {
         fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
