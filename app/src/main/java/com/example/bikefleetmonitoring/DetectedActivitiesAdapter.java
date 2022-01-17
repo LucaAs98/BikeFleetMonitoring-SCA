@@ -17,8 +17,10 @@
 package com.example.bikefleetmonitoring;
 
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,7 +41,7 @@ import java.util.HashMap;
 class DetectedActivitiesAdapter extends ArrayAdapter<DetectedActivity> {
 
     DetectedActivitiesAdapter(Context context,
-                                     ArrayList<DetectedActivity> detectedActivities) {
+                              ArrayList<DetectedActivity> detectedActivities) {
         super(context, 0, detectedActivities);
     }
 
@@ -92,8 +94,7 @@ class DetectedActivitiesAdapter extends ArrayAdapter<DetectedActivity> {
             int confidence = detectedActivitiesMap.containsKey(Constants.MONITORED_ACTIVITIES[i]) ?
                     detectedActivitiesMap.get(Constants.MONITORED_ACTIVITIES[i]) : 0;
 
-            tempList.add(new DetectedActivity(Constants.MONITORED_ACTIVITIES[i],
-                    confidence));
+            tempList.add(new DetectedActivity(Constants.MONITORED_ACTIVITIES[i], confidence));
         }
 
         // Remove all items.
@@ -101,7 +102,7 @@ class DetectedActivitiesAdapter extends ArrayAdapter<DetectedActivity> {
 
         // Adding the new list items notifies attached observers that the underlying data has
         // changed and views reflecting the data should refresh.
-        for (DetectedActivity detectedActivity: tempList) {
+        for (DetectedActivity detectedActivity : tempList) {
             this.add(detectedActivity);
         }
     }

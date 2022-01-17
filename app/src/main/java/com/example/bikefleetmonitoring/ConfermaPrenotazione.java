@@ -71,8 +71,7 @@ public class ConfermaPrenotazione extends AppCompatActivity {
 
                 final DatePickerDialog datePickerDialog = new DatePickerDialog(
                         ConfermaPrenotazione.this, date,
-                        myCalendar
-                                .get(Calendar.YEAR), myCalendar.get(Calendar.MONTH), myCalendar.get(Calendar.DAY_OF_MONTH));
+                        myCalendar.get(Calendar.YEAR), myCalendar.get(Calendar.MONTH), myCalendar.get(Calendar.DAY_OF_MONTH));
                 DatePicker datePicker = datePickerDialog.getDatePicker();
                 datePicker.setMaxDate(new Date().getTime() + 604800000);
                 datePicker.setMinDate(new Date().getTime());
@@ -97,58 +96,20 @@ public class ConfermaPrenotazione extends AppCompatActivity {
             }
         });
 
-       /* btnGiornoA.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                editTextCliccato = btnGiornoA;
-                new DatePickerDialog(ConfermaPrenotazione.this, date, myCalendar
-                        .get(Calendar.YEAR), myCalendar.get(Calendar.MONTH),
-                        myCalendar.get(Calendar.DAY_OF_MONTH)).show();
-            }
-        });
-
-        btnOraA.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Calendar mcurrentTime = Calendar.getInstance();
-                int hour = mcurrentTime.get(Calendar.HOUR_OF_DAY);
-                int minute = mcurrentTime.get(Calendar.MINUTE);
-                TimePickerDialog mTimePicker;
-                mTimePicker = new TimePickerDialog(ConfermaPrenotazione.this, new TimePickerDialog.OnTimeSetListener() {
-                    @Override
-                    public void onTimeSet(TimePicker timePicker, int selectedHour, int selectedMinute) {
-                        btnOraA.setText(selectedHour + ":" + selectedMinute);
-                    }
-                }, hour, minute, true);//Yes 24 hour time
-                mTimePicker.show();
-            }
-        });*/
-
-
         //Settiamo cosa fare quando si clicca sul bottone per prenotare
         btnConfermaPrenot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //Se qualche campo è stato lasciato vuoto si da errore.
                 if (TextUtils.isEmpty(btnGiornoDa.getText().toString())) {
-                    btnGiornoDa.setError(" campo 'Giorno inizio' è richiesto.");
+                    btnGiornoDa.setError("Il campo 'Giorno inizio' è richiesto.");
                     return;
                 }
-
-                /*if (TextUtils.isEmpty(btnGiornoA.getText().toString())) {
-                    btnGiornoA.setError("Il campo 'Giorno fine' è richiesto.");
-                    return;
-                }*/
 
                 if (TextUtils.isEmpty(btnOraDa.getText().toString())) {
                     btnOraDa.setError("Il campo 'Ora inizio' è richiesto.");
                     return;
                 }
-
-                /*if (TextUtils.isEmpty(btnOraA.getText().toString())) {
-                    btnOraA.setError("Il campo 'Ora fine' è richiesto.");
-                    return;
-                }*/
 
                 //Se tutti i campi sono stati compilati allora facciamo la richiesta di prenotazione
                 richiestaPostPrenotazione();
@@ -202,7 +163,6 @@ public class ConfermaPrenotazione extends AppCompatActivity {
                 params.put("cod", cod);
                 params.put("utente", Home.session);
                 params.put("di", btnGiornoDa.getText().toString() + " " + btnOraDa.getText().toString());
-                //params.put("df", btnGiornoA.getText().toString() + " " + btnOraA.getText().toString());
                 params.put("bici", String.valueOf(idBici));
                 params.put("ras", String.valueOf(idRastrelliera));
 
@@ -229,8 +189,6 @@ public class ConfermaPrenotazione extends AppCompatActivity {
     private void trovaElementiXML() {
         btnGiornoDa = findViewById(R.id.btnGiornoDa);
         btnOraDa = findViewById(R.id.btnOraDa);
-        //btnGiornoA = findViewById(R.id.btnGiornoA);
-        //btnOraA = findViewById(R.id.btnOraA);
         toolbar = findViewById(R.id.toolbar);
         btnConfermaPrenot = findViewById(R.id.btnConfermaPrenot);
     }

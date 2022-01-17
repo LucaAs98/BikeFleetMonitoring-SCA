@@ -51,7 +51,6 @@ public class MappaRastrelliere extends AppCompatActivity implements OnMapReadyCa
         super.onCreate(savedInstanceState);
         setContentView(R.layout.mappa_rastrelliere);
 
-
         String[] neededPermissions = {
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION,

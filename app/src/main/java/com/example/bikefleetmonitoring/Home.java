@@ -59,8 +59,6 @@ public class Home extends AppCompatActivity {
     String urlRastrellieraVicino = "http://" + Login.ip + ":3000/checkDistance";
     String codP = null, idBici;
 
-
-    /**** Prendi la posizione reale!!!!!!!!!!!!  ***/
     FusedLocationProviderClient fusedLocationProviderClient;
     double longUtente, latUtente;
 
@@ -98,7 +96,7 @@ public class Home extends AppCompatActivity {
         //Istanzia la coda di richieste
         RequestQueue queue = Volley.newRequestQueue(Home.this);
 
-        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
+        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/codice_prenotazione"
         StringRequest stringRequest = new StringRequest(Request.Method.GET, urlGetCodPren,
                 response -> {
                     JSONArray arrCodici;
@@ -141,8 +139,6 @@ public class Home extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (noleggioIniziato) {
-
-
 
                     /* Controlliamo che l'utente si trovi vicino ad una rastrelliera. Successivamente
                     facciamo terminare il noleggio */

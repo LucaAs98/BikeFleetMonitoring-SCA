@@ -462,7 +462,6 @@ public class GeolocalizationService extends Service implements SharedPreferences
             lastActivityType = succActivityType;
         }
 
-
     }
 
     @Override

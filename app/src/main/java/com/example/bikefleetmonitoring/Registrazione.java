@@ -88,7 +88,7 @@ public class Registrazione extends AppCompatActivity {
         //Istanzia la coda di richieste
         RequestQueue queue = Volley.newRequestQueue(Registrazione.this);
 
-        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
+        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/registrazione"
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url1,
                 response -> {
                     // Aggiungi codice da fare quando arriva la risposta dalla richiesta
@@ -134,7 +134,7 @@ public class Registrazione extends AppCompatActivity {
         //Istanzia la coda di richieste
         RequestQueue queue = Volley.newRequestQueue(Registrazione.this);
 
-        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/prova_posizione"
+        // Stringa per fare la richiesta. Nel caso della posizione facciamo una richiesta POST all'url "http://192.168.1.122:3000/utenti"
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 response -> {
                     // Aggiungi codice da fare quando arriva la risposta dalla richiesta

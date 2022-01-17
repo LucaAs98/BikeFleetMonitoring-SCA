@@ -57,7 +57,6 @@ public class IniziaNoleggio extends AppCompatActivity {
     String idRastrellieraVicino = "";       //Rastrelliera vicino all'utente
     String idRastrellieraBici = "";         //Rastrelliera dov'è situata la bici prenotata
 
-    /**** Prendi la posizione reale!!!!!!!!!!!!  ***/
     FusedLocationProviderClient fusedLocationProviderClient;
     double longUtente = 11.344264, latUtente = 44.48761;
 
@@ -192,19 +191,16 @@ public class IniziaNoleggio extends AppCompatActivity {
                             diS = diS.substring(0, diS.length() - 5);
                             //System.out.println(diS);
                             Date di = format.parse(diS);
-                            di.setTime(di.getTime() + TimeUnit.HOURS.toMillis(2));
+                            di.setTime(di.getTime() + TimeUnit.HOURS.toMillis(1));
 
                             Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
                             //getTime() returns the current date in default time zone
                             Date dataAttuale = calendar.getTime();
 
-                            //assert di != null;
-                            //System.out.println(di.toString());
-                            //System.out.println(dataAttuale.toString());
-
                             //Se la rastrelliera è la stessa vicino all'utente
                             if (idRastrellieraBici.equals(idRastrellieraVicino)) {
 
+                                //Controllo effettivo della data
                                 if (di.before(dataAttuale)) {
 
                                     //Facciamo la richiesta di attivazione del noleggio
